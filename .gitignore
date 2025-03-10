@@ -8,3 +8,5 @@ debian/
 build/
 scripts/*.png
 *.pcd
+doc/
+Doxyfile

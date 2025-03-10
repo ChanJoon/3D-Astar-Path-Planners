@@ -1,6 +1,0 @@
-# OUTPUT_DIRECTORY       = doxygen_docs/
-OUTPUT_DIRECTORY       = @CMAKE_CURRENT_SOURCE_DIR@/doc/
-INPUT                  = @CMAKE_CURRENT_SOURCE_DIR@/
-RECURSIVE              = YES
-EXCLUDE                = @CMAKE_CURRENT_SOURCE_DIR@/include/voro++-0.4.6
-EXCLUDE_PATTERNS       = *.yaml *.launch *.rviz *.bt *.gridm *.pgm
