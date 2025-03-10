@@ -64,7 +64,8 @@ namespace Planners
 
             if ( successor == nullptr || 
                  successor->isInClosedList || 
-                 successor->occuppied ) 
+                 successor->occuppied ||
+                 successor->coordinates.z < 5) 
                 continue;
     
             if (! successor->isInOpenList ) { 

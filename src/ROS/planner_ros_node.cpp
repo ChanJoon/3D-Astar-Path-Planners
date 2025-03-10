@@ -6,6 +6,7 @@
 #include "Planners/ThetaStar.hpp"
 #include "Planners/ThetaStarM1.hpp"
 #include "Planners/ThetaStarM2.hpp"
+#include "Planners/ThetaStarAGR.hpp"
 #include "Planners/LazyThetaStar.hpp"
 #include "Planners/LazyThetaStarM1.hpp"
 #include "Planners/LazyThetaStarM1Mod.hpp"
@@ -26,6 +27,8 @@
 #include <pcl_ros/transforms.h>
 
 #include <nav_msgs/OccupancyGrid.h>
+#include <nav_msgs/Path.h>
+#include <geometry_msgs/PoseStamped.h>
 
 #include <heuristic_planners/GetPath.h>
 #include <heuristic_planners/SetAlgorithm.h>
@@ -56,6 +59,7 @@ public:
 
         line_markers_pub_  = lnh_.advertise<visualization_msgs::Marker>("path_line_markers", 1);
         point_markers_pub_ = lnh_.advertise<visualization_msgs::Marker>("path_points_markers", 1);
+        global_path_pub_ = lnh_.advertise<nav_msgs::Path>("global_path", 1);
 
     }
 
@@ -123,6 +127,10 @@ private:
         times.reserve(_req.tries.data);
         int real_tries = _req.tries.data;
         if(real_tries == 0) real_tries = 1;
+
+        nav_msgs::Path global_path;
+        global_path.header.frame_id = "map";
+        global_path.header.stamp = ros::Time::now();
 
         for(int i = 0; i < real_tries; ++i){
 
@@ -202,15 +210,23 @@ private:
                 if(_req.tries.data < 2 || i == ( _req.tries.data - 1) ){
 
                     for(const auto &it: std::get<Planners::utils::CoordinateList>(path_data["path"])){
+                        geometry_msgs::PoseStamped pose;
+                        pose.header = global_path.header;
+                        pose.pose.position = Planners::utils::continousPoint(it, resolution_);
+                        pose.pose.orientation.w = 1;
+                        global_path.poses.push_back(pose);
+
                         path_line_markers_.points.push_back(Planners::utils::continousPoint(it, resolution_));
                         path_points_markers_.points.push_back(Planners::utils::continousPoint(it, resolution_));
                     }
 
                     publishMarker(path_line_markers_, line_markers_pub_);
                     publishMarker(path_points_markers_, point_markers_pub_);
+                    global_path_pub_.publish(global_path);
 
                     path_line_markers_.points.clear();
                     path_points_markers_.points.clear();
+                    global_path.poses.clear();
 
                     ROS_INFO("Path calculated succesfully");
                 }
@@ -241,6 +257,19 @@ private:
         
         lnh_.param("use3d", use3d_, (bool)true);
 
+        // ThetaStarAGR-specific parameters
+        float ground_height_threshold = 5.0f;
+        int ground_to_air_transition_cost = 0;
+        float air_movement_factor = 2;
+        int flying_cost = 10;
+
+        if (algorithm_name == "thetastaragr") {
+            lnh_.param("ground_height_threshold", ground_height_threshold, (float)5.0);
+            lnh_.param("ground_to_air_transition_cost", ground_to_air_transition_cost, (int)0);
+            lnh_.param("air_movement_factor", air_movement_factor, (float)2.0);
+            lnh_.param("flying_cost", flying_cost, (int)10);
+        }
+
         if( algorithm_name == "astar" ){
             ROS_INFO("Using A*");
             algorithm_.reset(new Planners::AStar(use3d_));
@@ -259,6 +288,9 @@ private:
         }else if ( algorithm_name == "thetastarsafetycost" ){
             ROS_INFO("Using Theta* Safety Cost");
             algorithm_.reset(new Planners::ThetaStarM2(use3d_));
+        }else if ( algorithm_name == "thetastaragr" ){
+            ROS_INFO("Using Air-Ground Robot Aware Theta*");
+            algorithm_.reset(new Planners::ThetaStarAGR(use3d_, ground_height_threshold, ground_to_air_transition_cost, air_movement_factor, flying_cost));
         }else if( algorithm_name == "lazythetastar" ){
             ROS_INFO("Using LazyTheta*");
             algorithm_.reset(new Planners::LazyThetaStar(use3d_));
@@ -300,7 +332,7 @@ private:
         
         std::string frame_id;
         lnh_.param("frame_id", frame_id, std::string("map"));		
-        configMarkers(algorithm_name, frame_id, resolution_);
+        configMarkers(algorithm_name, frame_id, 0.3);
 
         lnh_.param("save_data_file", save_data_, (bool)true);		
         lnh_.param("data_folder", data_folder_, std::string("planing_data.txt"));		
@@ -433,7 +465,7 @@ private:
     ros::ServiceServer request_path_server_, change_planner_server_;
     ros::Subscriber pointcloud_sub_, occupancy_grid_sub_;
     //TODO Fix point markers
-    ros::Publisher line_markers_pub_, point_markers_pub_;
+    ros::Publisher line_markers_pub_, point_markers_pub_, global_path_pub_;
 
     std::unique_ptr<Grid3d> m_grid3d_;
 

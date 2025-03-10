@@ -3,14 +3,14 @@
     <arg name="map_name"            default="mbzirc_challenge3"/>
     <!-- <arg name="map_name"            default="wall"/> -->
     <!-- <arg name="map_name"            default="laberynth"/> -->
-    <arg name="map"                 default="$(find heuristic_planners)/resources/3dmaps/$(arg map_name).bt"/>
+    <arg name="map"                 default="$(find heuristic_planners)/resources/3dmaps/$(arg map_name).pcd"/>
 
     <arg name="algorithm_name"      default="costlazythetastar"/>
 
     <arg name="world_size_x"        default="60"/>
     <arg name="world_size_y"        default="60"/>
     <arg name="world_size_z"        default="20"/>
-    <arg name="resolution"          default="0.2"/>
+    <arg name="resolution"          default="0.1"/>
 
     <arg name="inflate_map"         default="true"/>
     <arg name="inflation_size"      default="$(arg resolution)"/>
@@ -31,7 +31,7 @@
     <arg name="robot_radius"        default="0.4"/> 
     
     <arg name="output" default="screen"/>
-    <node pkg="heuristic_planners" type="planner_ros_node" name="planner_ros_node" output="$(arg output)">
+    <node pkg="heuristic_planners" type="planner_ros_node" name="planner_ros_node" output="$(arg output)" required="true" launch-prefix="gdb -ex run --args">
         <remap from="points" to="/grid3d/map_point_cloud"/>
         <param name="map_path"              value="$(arg map)"/>
         <param name="world_size_x"          value="$(arg world_size_x)"/>
@@ -51,6 +51,14 @@
 
         <param name="cost_scaling_factor"   value="$(arg cost_scaling_factor)"/>
         <param name="robot_radius"          value="$(arg robot_radius)"/>
+
+        <param name="ground_height_threshold" value="9.0" />
+        <param name="ground_to_air_transition_cost" value="0" />
+        <param name="air_movement_factor" value="1.0" />
+        <param name="flying_cost" value="2.0" />
+        <!-- 9.0 / 100 / 1.0 / 1.0 High transition cost -->
+        <!-- 9.0 / 0 / 2.0 No Air -->
+        <!-- 9.0 / 0 / 1.0 / 2.0 Ideal -->
     </node>
 
     <node pkg="rviz" name="rviz" type="rviz" args="-d $(find heuristic_planners)/rviz/planners.rviz"/>

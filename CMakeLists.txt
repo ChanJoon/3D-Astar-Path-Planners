@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.10.2)
 project(heuristic_planners)
 
-add_compile_options(-std=c++17 -Wall -Werror -Wextra -pedantic )
+add_compile_options(-std=c++17 -Wall -Werror -Wextra -pedantic)
 
 option(BUILD_DOC            "Build documentation   " ON)
 option(BUILD_ROS_SUPPORT    "Build with ROS Support" ON)
@@ -45,6 +45,13 @@ endif()
 unset(BUILD_DOC CACHE)
 
 find_package(Boost)
+find_package(OpenMP REQUIRED)
+if(OpenMP_CXX_FOUND)
+    message(STATUS "✅ OpenMP Found: ${OpenMP_CXX_FLAGS}")
+    add_definitions(-DOPENMP_ENABLED)
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OpenMP_CXX_FLAGS}")
+    set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} ${OpenMP_EXE_LINKER_FLAGS}")
+endif()
 
 if(BUILD_ROS_SUPPORT)
   add_compile_definitions(ROS)
@@ -99,7 +106,7 @@ generate_messages(
 ## DEPENDS: system dependencies of this project that dependent projects also need
 catkin_package(
  INCLUDE_DIRS include
- LIBRARIES AlgorithmBase AStar AStarM1 AStarM2 ThetaStar ThetaStarM1 ThetaStarM2 LazyThetaStar LazyThetaStarM1 LazyThetaStarM1Mod LazyThetaStarM2
+ LIBRARIES AlgorithmBase AStar AStarM1 AStarM2 ThetaStar ThetaStarM1 ThetaStarM2 ThetaStarAGR LazyThetaStar LazyThetaStarM1 LazyThetaStarM1Mod LazyThetaStarM2
  # 
  CATKIN_DEPENDS std_msgs visualization_msgs geometry_msgs nav_msgs roscpp message_runtime costmap_2d
 #  DEPENDS system_lib
@@ -113,6 +120,7 @@ include_directories(
   include
   ${catkin_INCLUDE_DIRS}
   ${CMAKE_CURRENT_SOURCE_DIR}/include/voro++-0.4.6
+  ${CMAKE_CURRENT_SOURCE_DIR}/include/bonxai
 )
 if( BUILD_VOROCPP )
   list(APPEND VORO_SOURCES  ${CMAKE_CURRENT_SOURCE_DIR}/include/voro++-0.4.6/src/voro++.cc
@@ -158,15 +166,18 @@ add_library(AStarM2            src/Planners/AStarM2.cpp )
 add_library(ThetaStar          src/Planners/ThetaStar.cpp )
 add_library(ThetaStarM1        src/Planners/ThetaStarM1.cpp )
 add_library(ThetaStarM2        src/Planners/ThetaStarM2.cpp )
+add_library(ThetaStarAGR        src/Planners/ThetaStarAGR.cpp )
 add_library(LazyThetaStar      src/Planners/LazyThetaStar.cpp )
 add_library(LazyThetaStarM1    src/Planners/LazyThetaStarM1.cpp )
 add_library(LazyThetaStarM1Mod src/Planners/LazyThetaStarM1Mod.cpp )
 add_library(LazyThetaStarM2    src/Planners/LazyThetaStarM2.cpp )
 
 
-
-list(APPEND ${PROJECT_NAME}_LIBRARIES AlgorithmBase AStar AStarM1 AStarM2 ThetaStar ThetaStarM1 ThetaStarM2 LazyThetaStar LazyThetaStarM1 LazyThetaStarM1Mod LazyThetaStarM2)  
+list(APPEND ${PROJECT_NAME}_LIBRARIES AlgorithmBase AStar AStarM1 AStarM2 ThetaStar ThetaStarM1 ThetaStarM2 ThetaStarAGR LazyThetaStar LazyThetaStarM1 LazyThetaStarM1Mod LazyThetaStarM2)  
 target_link_libraries(${${PROJECT_NAME}_LIBRARIES} ${catkin_LIBRARIES} ${Boost_LIBRARIES})
+if (OpenMP_CXX_FOUND)
+  target_link_libraries(${${PROJECT_NAME}_LIBRARIES} OpenMP::OpenMP_CXX)
+endif()
 add_dependencies( ${${PROJECT_NAME}_LIBRARIES} ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 list(APPEND ${PROJECT_NAME}_TARGETS ${${PROJECT_NAME}_LIBRARIES})
 
@@ -174,6 +185,9 @@ if(BUILD_ROS_SUPPORT)
   add_executable(planner_ros_node src/ROS/planner_ros_node.cpp )
   add_dependencies(planner_ros_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS} ${${PROJECT_NAME}_LIBRARIES})
   target_link_libraries(planner_ros_node ${catkin_LIBRARIES} ${${PROJECT_NAME}_LIBRARIES} -lstdc++fs Eigen3::Eigen -lcrypto -lssl)
+  if(OpenMP_CXX_FOUND)
+    target_link_libraries(planner_ros_node OpenMP::OpenMP_CXX)
+  endif()
   list(APPEND ${PROJECT_NAME}_TARGETS planner_ros_node)
 #############
   ## Install ##

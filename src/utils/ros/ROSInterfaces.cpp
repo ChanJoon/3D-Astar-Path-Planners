@@ -110,19 +110,31 @@ namespace Planners
             auto world_size = _algorithm.getWorldSize();
             auto resolution = _algorithm.getWorldResolution();
 
-            for (int i = 0; i < world_size.x; i++)
+            if (world_size.x <= 0 || world_size.y <= 0 || world_size.z <= 0)
             {
-                for (int j = 0; j < world_size.y; j++)
+                ROS_ERROR("Invalid world size: [%d, %d, %d]", world_size.x, world_size.y, world_size.z);
+                return false;
+            }
+            try {
+                #pragma omp parallel for collapse(3)
+                for (int i = 0; i < world_size.x; i++)
                 {
-                    for (int k = 0; k < world_size.z; k++)
+                    for (int j = 0; j < world_size.y; j++)
                     {
-                        //JAC: Precision
-                        // auto cost = _grid.getCellCost(i * resolution, j * resolution, k * resolution);
-                        float cost = _grid.getCellCost(i * resolution, j * resolution, k * resolution);
-                        // std::cout << "Cost: " << cost << std::endl;   
-                        _algorithm.configureCellCost({i, j, k}, cost);
+                        for (int k = 0; k < world_size.z; k++)
+                        {
+                            //JAC: Precision
+                            // auto cost = _grid.getCellCost(i * resolution, j * resolution, k * resolution);
+                            float cost = _grid.getCellCost(i * resolution, j * resolution, k * resolution);
+                            // std::cout << "Cost: " << cost << std::endl;   
+                            _algorithm.configureCellCost({i, j, k}, cost);
+                        }
                     }
                 }
+            }
+            catch (const std::exception &e)
+            {
+                ROS_ERROR("Exception: %s", e.what());
             }
 
             return true;

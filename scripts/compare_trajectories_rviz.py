@@ -61,7 +61,7 @@ parser.add_argument("--launch",     help="name of the launch file",
                     choices=launch_list)
 parser.add_argument("--algorithm",  help="name of the algorithm",  
                     nargs='*', type=str, required=True, default=["astar", "astarm1", "astarm2"], 
-                    choices=["astar", "astarm1", "astarm2", "thetastar", "thetastarm1", "thetastarm2", "lazythetastar", "lazythetastarm1", "lazythetastarm1mod", "lazythetastarm2"])
+                    choices=["astar", "costastar", "astarsafetycost", "thetastar", "costhetastar", "thetastarsafetycost", "lazythetastar", "costlazythetastar", "costlazythetastarmodified", "lazythetastarsafetycost"])
 
 parser.add_argument("--map-name",     help="name of the map to use. This map should be under the 3d/2d maps folder",     
                     nargs='+', type=str,  default=['mbzirc_challenge3.bt'],
@@ -156,6 +156,12 @@ for algorithm in args.algorithm:
                          "\nLine of sight checks: " + str(resp.line_of_sight_checks.data) + \
                          "\nPath Length: "          + str(round(resp.path_length.data,3)) + " m"
         markerPub.publish(text_marker)
+        print(f"=== [ {colors.BLUE} {algorithm} {colors.ENDC} ] ===")
+        print(f"Time spent: {resp.time_spent.data} ms")
+        print(f"Explored nodes: {resp.explored_nodes.data}")
+        print(f"Line of sight checks: {resp.line_of_sight_checks.data}")
+        print(f"Path Length: {round(resp.path_length.data,3)} m")
+        print()
 
     except rospy.ServiceException as e:
         print("Service call failed: %s"%e)
