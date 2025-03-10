@@ -3,7 +3,6 @@ project(heuristic_planners)
 
 add_compile_options(-std=c++17 -Wall -Werror -Wextra -pedantic)
 
-option(BUILD_DOC            "Build documentation   " ON)
 option(BUILD_ROS_SUPPORT    "Build with ROS Support" ON)
 option(OPTIMIZE_FLAG        "Enable Compiler Optimization for Runtime Performance" ON)
 option(BUILD_DEBUG          "Build debug features  " OFF)
@@ -20,30 +19,6 @@ if(BUILD_COMPUTE_STATS)
   add_compile_definitions(COMPUTE_STATISTICS)
 endif()
 
-if(BUILD_DOC)
-# check if Doxygen is installed
-  find_package(Doxygen)
-  if (DOXYGEN_FOUND)
-      # set input and output files
-      set(DOXYGEN_IN ${CMAKE_CURRENT_SOURCE_DIR}/Doxyfile)
-      set(DOXYGEN_OUT ${CMAKE_CURRENT_BINARY_DIR}/Doxyfile)
-
-      # request to configure the file
-      configure_file(${DOXYGEN_IN} ${DOXYGEN_OUT} @ONLY)
-      message("Doxygen build started")
-
-      # note the option ALL which allows to build the docs together with the application
-      add_custom_target( doc_doxygen ALL
-          COMMAND ${DOXYGEN_EXECUTABLE} ${DOXYGEN_OUT}
-          WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
-          COMMENT "Generating API documentation with Doxygen"
-          VERBATIM )
-  else (DOXYGEN_FOUND)
-    message("Doxygen need to be installed to generate the doxygen documentation")
-  endif (DOXYGEN_FOUND)
-endif()
-unset(BUILD_DOC CACHE)
-
 find_package(Boost)
 find_package(OpenMP REQUIRED)
 if(OpenMP_CXX_FOUND)
@@ -55,7 +30,6 @@ endif()
 
 if(BUILD_ROS_SUPPORT)
   add_compile_definitions(ROS)
-  ## Find catkin macros and libraries
   find_package(catkin REQUIRED COMPONENTS
     std_msgs
     geometry_msgs
@@ -68,7 +42,6 @@ if(BUILD_ROS_SUPPORT)
     octomap_ros
     costmap_2d
   )
-  #Eigen is used to calculate metrics parameters
   find_package (Eigen3 REQUIRED NO_MODULE)
   find_package(OpenSSL REQUIRED)
   if(BUILD_DEBUG)
@@ -76,45 +49,26 @@ if(BUILD_ROS_SUPPORT)
   endif()
   unset(BUILD_DEBUG CACHE)
 
-################################################
-## Declare ROS messages, services and actions ##
-################################################
 catkin_python_setup()
 
-## Generate services in the 'srv' folder
 add_service_files(
   FILES
   GetPath.srv
   SetAlgorithm.srv
 )
 
-## Generate added messages and services with any dependencies listed here
 generate_messages(
   DEPENDENCIES
   geometry_msgs std_msgs
 )
 
 
-###################################
-## catkin specific configuration ##
-###################################
-## The catkin_package macro generates cmake config files for your package
-## Declare things to be passed to dependent projects
-## INCLUDE_DIRS: uncomment this if your package contains header files
-## LIBRARIES: libraries you create in this project that dependent projects also need
-## CATKIN_DEPENDS: catkin_packages dependent projects also need
-## DEPENDS: system dependencies of this project that dependent projects also need
 catkin_package(
  INCLUDE_DIRS include
  LIBRARIES AlgorithmBase AStar AStarM1 AStarM2 ThetaStar ThetaStarM1 ThetaStarM2 ThetaStarAGR LazyThetaStar LazyThetaStarM1 LazyThetaStarM1Mod LazyThetaStarM2
- # 
  CATKIN_DEPENDS std_msgs visualization_msgs geometry_msgs nav_msgs roscpp message_runtime costmap_2d
-#  DEPENDS system_lib
 )
 endif()
-###########
-## Build ##
-###########
 
 include_directories(
   include
@@ -189,12 +143,9 @@ if(BUILD_ROS_SUPPORT)
     target_link_libraries(planner_ros_node OpenMP::OpenMP_CXX)
   endif()
   list(APPEND ${PROJECT_NAME}_TARGETS planner_ros_node)
-#############
-  ## Install ##
-#############
 
 
-## Mark executables and/or libraries for installation
+
   install(TARGETS ${${PROJECT_NAME}_TARGETS}
   ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
   LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
@@ -212,13 +163,10 @@ if(BUILD_ROS_SUPPORT)
                                   DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
   )
 
-## Mark cpp header files for installation
   install(DIRECTORY include/
   DESTINATION ${CATKIN_PACKAGE_INCLUDE_DESTINATION}
   FILES_MATCHING PATTERN "*.hpp"
   )
-
-## Mark other files for installation (e.g. launch and bag files, etc.)
 
   install(DIRECTORY launch/ DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}/launch)
   install(DIRECTORY config/ DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}/config)
