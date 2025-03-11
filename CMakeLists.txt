@@ -7,7 +7,6 @@ option(BUILD_ROS_SUPPORT    "Build with ROS Support" ON)
 option(OPTIMIZE_FLAG        "Enable Compiler Optimization for Runtime Performance" ON)
 option(BUILD_DEBUG          "Build debug features  " OFF)
 option(BUILD_COMPUTE_STATS  "Build Algorithms with statistics" ON)
-option(BUILD_VOROCPP        "Build voro++ features  " OFF)
 
 if(OPTIMIZE_FLAG)
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O2")
@@ -76,25 +75,7 @@ include_directories(
   ${CMAKE_CURRENT_SOURCE_DIR}/include/voro++-0.4.6
   ${CMAKE_CURRENT_SOURCE_DIR}/include/bonxai
 )
-if( BUILD_VOROCPP )
-  list(APPEND VORO_SOURCES  ${CMAKE_CURRENT_SOURCE_DIR}/include/voro++-0.4.6/src/voro++.cc
-                            ${CMAKE_CURRENT_SOURCE_DIR}/include/voro++-0.4.6/src/cell.cc
-                            ${CMAKE_CURRENT_SOURCE_DIR}/include/voro++-0.4.6/src/c_loops.cc
-                            ${CMAKE_CURRENT_SOURCE_DIR}/include/voro++-0.4.6/src/common.cc
-                            ${CMAKE_CURRENT_SOURCE_DIR}/include/voro++-0.4.6/src/container_prd.cc
-                            ${CMAKE_CURRENT_SOURCE_DIR}/include/voro++-0.4.6/src/container.cc
-                            ${CMAKE_CURRENT_SOURCE_DIR}/include/voro++-0.4.6/src/pre_container.cc
-                            ${CMAKE_CURRENT_SOURCE_DIR}/include/voro++-0.4.6/src/unitcell.cc
-                            ${CMAKE_CURRENT_SOURCE_DIR}/include/voro++-0.4.6/src/v_base.cc
-                            ${CMAKE_CURRENT_SOURCE_DIR}/include/voro++-0.4.6/src/v_compute.cc
-                            ${CMAKE_CURRENT_SOURCE_DIR}/include/voro++-0.4.6/src/wall.cc
-  )
-  add_library(Voro++ STATIC ${VORO_SOURCES})
-  list(APPEND ${PROJECT_NAME}_LIBRARIES Voro++)
-  list(APPEND ${PROJECT_NAME}_TARGETS voro++)
-  add_executable(voro++ include/voro++-0.4.6/src/cmd_line.cc)
-  target_link_libraries(voro++ Voro++)
-endif()
+
 ##This is True by default but it's good to have it here as a reminder
 set(BUILD_SHARED_LIBS TRUE)
 list(APPEND ${PROJECT_NAME}_UTILS_SOURCES src/utils/geometry_utils.cpp
