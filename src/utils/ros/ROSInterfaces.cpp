@@ -117,16 +117,14 @@ namespace Planners
             }
             try {
                 #pragma omp parallel for collapse(3)
-                for (int i = 0; i < world_size.x; i++)
+                for (int k = 0; k < world_size.z; k++)
                 {
                     for (int j = 0; j < world_size.y; j++)
                     {
-                        for (int k = 0; k < world_size.z; k++)
+                        for (int i = 0; i < world_size.x; i++)
                         {
                             //JAC: Precision
-                            // auto cost = _grid.getCellCost(i * resolution, j * resolution, k * resolution);
                             float cost = _grid.getCellCost(i * resolution, j * resolution, k * resolution);
-                            // std::cout << "Cost: " << cost << std::endl;   
                             _algorithm.configureCellCost({i, j, k}, cost);
                         }
                     }

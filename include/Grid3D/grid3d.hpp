@@ -33,10 +33,6 @@
 #include <openssl/sha.h> //for SHA512_DIGEST_LENGTH
 // #include "utils/ros/ROSInterfaces.hpp"
 
-// #ifdef BUILD_VORONOI
-// #include "voro++-0.4.6/src/voro++.hh"
-// #endif
-
 class Grid3d
 {
 private:
@@ -71,14 +67,19 @@ private:
 	// Visualization of a grid slice as 2D grid map msg
 	nav_msgs::OccupancyGrid m_gridSliceMsg;
 	ros::Publisher m_gridSlicePub;
+	ros::Subscriber global_cloud_sub_;
 	ros::Timer gridTimer;
 
 	//Parameters added to allow a new exp function to test different gridmaps
 	double cost_scaling_factor, robot_radius;
 	bool use_costmap_function;
+	bool use_marsim;
+	bool global_cloud_received_ = false;
 
 	// Bonxai
 	Bonxai::ProbabilisticMap* m_bonxai_map;
+
+	double m_offsetX, m_offsetY, m_offsetZ;
 	
 public:
 	Grid3d(): m_cloud(new pcl::PointCloud<pcl::PointXYZI>)
@@ -107,69 +108,36 @@ public:
 		lnh.param("cost_scaling_factor", cost_scaling_factor, 0.8); //0.8		
 		lnh.param("robot_radius", robot_radius, 0.4);		//0.4
 		lnh.param("use_costmap_function", use_costmap_function, (bool)true);		
+		lnh.param("use_marsim", use_marsim, (bool)false);
 
 		// Load octomap 
 		m_octomap = NULL;
 		m_grid = NULL;
 		m_bonxai_map = NULL;
 
-		// if(loadOctomap(m_mapPath))
-		// {
-		// 	// Compute the point-cloud associated to the ocotmap
-		// 	computePointCloud();
+		global_cloud_sub_ = m_nh.subscribe("/global_cloud", 1, &Grid3d::globalCloudCallback, this);
 
-		// 	// Try to load tha associated grid-map from file
-		// 	std::string path;
-		// 	if(m_mapPath.compare(m_mapPath.length()-3, 3, ".bt") == 0)
-		// 		path = m_mapPath.substr(0,m_mapPath.find(".bt"))+".gridm";
-		// 	if(m_mapPath.compare(m_mapPath.length()-3, 3, ".ot") == 0)
-		// 		path = m_mapPath.substr(0,m_mapPath.find(".ot"))+".gridm";
-		// 	if(!loadGrid(path))
-		// 	{
-		// 		// Compute the gridMap using kdtree search over the point-cloud
-		// 		std::cout << "Computing 3D occupancy grid. This will take some time..." << std::endl;
-		// 		computeGrid();
-		// 		std::cout << "\tdone!" << std::endl;
-
-		// 		// Save grid on file
-		// 		if(saveGrid(path))
-		// 			std::cout << "Grid map successfully saved on " << path << std::endl;
-		// 	}
-
-		// 	// Build the msg with a slice of the grid if needed
-		// 	if(m_gridSlice >= 0 && m_gridSlice <= m_maxZ)
-		// 	{
-		// 		buildGridSliceMsg(m_gridSlice);
-		// 		m_gridSlicePub = m_nh.advertise<nav_msgs::OccupancyGrid>(m_nodeName+"/grid_slice", 1, true);
-		// 		gridTimer      = m_nh.createTimer(ros::Duration(1.0/m_publishGridSliceRate), &Grid3d::publishGridSliceTimer, this);
-		// 	}
-
-		// 	// Setup point-cloud publisher
-		// 	if(m_publishPc)
-		// 	{
-		// 		m_pcPub  = m_nh.advertise<sensor_msgs::PointCloud2>(m_nodeName+"/map_point_cloud", 1, true);
-		// 		mapTimer = m_nh.createTimer(ros::Duration(1.0/m_publishPointCloudRate), &Grid3d::publishMapPointCloudTimer, this);
-		// 	}
-		// }
-		if(loadMap(m_mapPath))
-		{
-			// Compute the point-cloud associated to the ocotmap
-			computePointCloud();
-			computeGrid();
-			
-			// Build the msg with a slice of the grid if needed
-			if(m_gridSlice >= 0 && m_gridSlice <= m_maxZ)
+		if(!use_marsim) {
+			if(loadMap(m_mapPath))
 			{
-				buildGridSliceMsg(m_gridSlice);
-				m_gridSlicePub = m_nh.advertise<nav_msgs::OccupancyGrid>(m_nodeName+"/grid_slice", 1, true);
-				gridTimer      = m_nh.createTimer(ros::Duration(1.0/m_publishGridSliceRate), &Grid3d::publishGridSliceTimer, this);	
-			}
-			
-			// Setup point-cloud publisher
-			if(m_publishPc)
-			{
-				m_pcPub  = m_nh.advertise<sensor_msgs::PointCloud2>(m_nodeName+"/map_point_cloud", 1, true);
-				mapTimer = m_nh.createTimer(ros::Duration(1.0/m_publishPointCloudRate), &Grid3d::publishMapPointCloudTimer, this);
+				// Compute the point-cloud associated to the ocotmap
+				computePointCloud();
+				computeGrid();
+				
+				// Build the msg with a slice of the grid if needed
+				if(m_gridSlice >= 0 && m_gridSlice <= m_maxZ)
+				{
+					buildGridSliceMsg(m_gridSlice);
+					m_gridSlicePub = m_nh.advertise<nav_msgs::OccupancyGrid>(m_nodeName+"/grid_slice", 1, true);
+					gridTimer      = m_nh.createTimer(ros::Duration(1.0/m_publishGridSliceRate), &Grid3d::publishGridSliceTimer, this);	
+				}
+				
+				// Setup point-cloud publisher
+				if(m_publishPc)
+				{
+					m_pcPub  = m_nh.advertise<sensor_msgs::PointCloud2>(m_nodeName+"/map_point_cloud", 1, true);
+					mapTimer = m_nh.createTimer(ros::Duration(1.0/m_publishPointCloudRate), &Grid3d::publishMapPointCloudTimer, this);
+				}
 			}
 		}
 	}
@@ -181,6 +149,13 @@ public:
 		if(m_grid != NULL)
 			delete []m_grid;
 	}
+	float getGridSizeX() { return m_gridSizeX; }
+	float getGridSizeY() { return m_gridSizeY; }
+	float getGridSizeZ() { return m_gridSizeZ; }
+	float getOffsetX() { return m_offsetX; }
+	float getOffsetY() { return m_offsetY; }
+	float getOffsetZ() { return m_offsetZ; }
+	float getResolution() { return m_resolution; }
 	bool setCostParams(const double &_cost_scaling_factor, const double &_robot_radius){
 
 		cost_scaling_factor = std::fabs(_cost_scaling_factor);
@@ -286,6 +261,104 @@ protected:
 		publishGridSlice();
 	}
 #pragma GCC diagnostic pop
+	void globalCloudCallback(const sensor_msgs::PointCloud2::ConstPtr& msg)
+	{
+		if(use_marsim) {
+			ROS_INFO("Received global cloud");
+
+			// Convert ROS PointCloud2 to PCL point cloud
+			pcl::PointCloud<pcl::PointXYZ>::Ptr cloud(new pcl::PointCloud<pcl::PointXYZ>);
+			pcl::fromROSMsg(*msg, *cloud);
+
+			// Downsample if too many points
+			if (cloud->points.size() > 100000)
+			{
+					ROS_INFO("Too many points (%lu), downsampling", cloud->points.size());
+					pcl::VoxelGrid<pcl::PointXYZ> sor;
+					sor.setInputCloud(cloud);
+					sor.setLeafSize(0.1f, 0.1f, 0.1f);
+					sor.filter(*cloud);
+					ROS_INFO("Downsampled to %lu points", cloud->points.size());
+			}
+
+			// Get map parameters
+			double minX = std::numeric_limits<double>::max();
+			double minY = std::numeric_limits<double>::max();
+			double minZ = std::numeric_limits<double>::max();
+			double maxX = std::numeric_limits<double>::lowest();
+			double maxY = std::numeric_limits<double>::lowest();
+			double maxZ = std::numeric_limits<double>::lowest();
+
+			for (const auto& point : cloud->points)
+			{
+					minX = std::min(minX, (double)point.x);
+					minY = std::min(minY, (double)point.y);
+					minZ = std::min(minZ, (double)point.z);
+					maxX = std::max(maxX, (double)point.x);
+					maxY = std::max(maxY, (double)point.y);
+					maxZ = std::max(maxZ, (double)point.z);
+			}
+			
+			m_offsetX = minX;
+			m_offsetY = minY;
+			m_offsetZ = minZ;
+
+			m_maxX = maxX - minX;
+			m_maxY = maxY - minY;
+			m_maxZ = maxZ - minZ;
+			m_resolution = 0.1; // TODO(ChanJoon)
+			m_oneDivRes = 1.0 / m_resolution;
+
+			// Create Bonxai map with resolution
+			if (m_bonxai_map != NULL)
+					delete m_bonxai_map;
+			m_bonxai_map = new Bonxai::ProbabilisticMap(m_resolution);
+
+			// Prepare points for Bonxai insertion
+			std::vector<Eigen::Vector3d> points;
+			points.reserve(cloud->points.size());
+			for (const auto& point : cloud->points)
+			{
+					points.emplace_back(
+							point.x - minX,
+							point.y - minY,
+							point.z - minZ
+					);
+			}
+
+			// Insert point cloud into Bonxai map
+			const Eigen::Vector3d origin(0, 0, 0);
+			m_bonxai_map->insertPointCloud(points, origin, std::numeric_limits<double>::infinity());
+
+			ROS_INFO("Map size:\n");
+			ROS_INFO("\tx: %.2f to %.2f", minX, maxX);
+			ROS_INFO("\ty: %.2f to %.2f", minY, maxY);
+			ROS_INFO("\tz: %.2f to %.2f", minZ, maxZ);
+			ROS_INFO("\tRes: %.2f", m_resolution);
+
+			// Compute point cloud and grid
+			computePointCloud();
+			computeGrid();
+
+			// Build the msg with a slice of the grid if needed
+			if (m_gridSlice >= 0 && m_gridSlice <= m_maxZ)
+			{
+					buildGridSliceMsg(m_gridSlice);
+					m_gridSlicePub = m_nh.advertise<nav_msgs::OccupancyGrid>(m_nodeName + "/grid_slice", 1, true);
+					gridTimer = m_nh.createTimer(ros::Duration(1.0 / m_publishGridSliceRate), &Grid3d::publishGridSliceTimer, this);
+			}
+
+			// Setup point-cloud publisher
+			if (m_publishPc)
+			{
+					m_pcPub = m_nh.advertise<sensor_msgs::PointCloud2>(m_nodeName + "/map_point_cloud", 1, true);
+					mapTimer = m_nh.createTimer(ros::Duration(1.0 / m_publishPointCloudRate), &Grid3d::publishMapPointCloudTimer, this);
+			}
+
+			global_cloud_received_ = true;
+			global_cloud_sub_.shutdown(); // Only process once
+		}
+	}
 
 	bool loadOctomap(std::string &path)
 	{
@@ -480,118 +553,6 @@ protected:
 		pcl::toROSMsg(*m_cloud, m_pcMsg);
 		m_pcMsg.header.frame_id = m_globalFrameId;
 	}
-	std::string bytes_to_hex_string(const std::vector<uint8_t>& bytes)
-	{
-			std::ostringstream stream;
-			for (uint8_t b : bytes)
-			{
-					stream << std::setw(2) << std::setfill('0') << std::hex << static_cast<int>(b);
-			}
-			return stream.str();
-	}
-	//perform the SHA3-512 hash
-	std::string sha3_512(const char * _input,int _size)
-	{
-			uint32_t digest_length = SHA512_DIGEST_LENGTH;
-			const EVP_MD* algorithm = EVP_sha3_512();
-			uint8_t* digest = static_cast<uint8_t*>(OPENSSL_malloc(digest_length));
-			EVP_MD_CTX* context = EVP_MD_CTX_new();
-			EVP_DigestInit_ex(context, algorithm, nullptr);
-			EVP_DigestUpdate(context, _input, _size);
-			EVP_DigestFinal_ex(context, digest, &digest_length);
-			EVP_MD_CTX_destroy(context);
-			std::string output = bytes_to_hex_string(std::vector<uint8_t>(digest, digest + digest_length));
-			OPENSSL_free(digest);
-			return output;
-	}
-	bool saveGrid(std::string &fileName)
-	{
-		FILE *pf;
-		
-		// Open file
-		pf = fopen(fileName.c_str(), "wb");
-		if(pf == NULL)
-		{
-			std::cout << "Error opening file " << fileName << " for writing" << std::endl;
-			return false;
-		}
-		
-		// Write grid general info 
-		fwrite(&m_gridSize, sizeof(int), 1, pf);
-		fwrite(&m_gridSizeX, sizeof(int), 1, pf);
-		fwrite(&m_gridSizeY, sizeof(int), 1, pf);
-		fwrite(&m_gridSizeZ, sizeof(int), 1, pf);
-		fwrite(&m_sensorDev, sizeof(float), 1, pf);
-		
-		// Write grid cells
-		fwrite(m_grid, sizeof(Planners::utils::gridCell), m_gridSize, pf);
-		
-		auto sha_value = sha3_512((const char*)m_grid, m_gridSize);
-		std::cout << "Sha512 value: " << sha_value << std::endl;
-		std::ofstream sha_file;
-		sha_file.open(fileName+"sha", std::ofstream::trunc);
-		sha_file << sha_value; 
-		sha_file.close();
-		// Close file
-		fclose(pf);
-		
-		return true;
-	}
-
-
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wunused-result"	
-	bool loadGrid(std::string &fileName)
-	{
-		FILE *pf;
-		
-		// Open file
-		pf = fopen(fileName.c_str(), "rb");
-		if(pf == NULL)
-		{
-			std::cout << "Error opening file " << fileName << " for reading" << std::endl;
-			return false;
-		}
-		
-		// Write grid general info 
-		fread(&m_gridSize, sizeof(int), 1, pf);
-		fread(&m_gridSizeX, sizeof(int), 1, pf);
-		fread(&m_gridSizeY, sizeof(int), 1, pf);
-		fread(&m_gridSizeZ, sizeof(int), 1, pf);
-		fread(&m_sensorDev, sizeof(float), 1, pf);
-		m_gridStepY = m_gridSizeX;
-		m_gridStepZ = m_gridSizeX*m_gridSizeY;
-		
-		// Write grid cells
-		if(m_grid != NULL)
-			delete []m_grid;
-		m_grid = new Planners::utils::gridCell[m_gridSize];
-		fread(m_grid, sizeof(Planners::utils::gridCell), m_gridSize, pf);
-		fclose(pf);
-		
-		std::ifstream input_sha;
-		auto sha_value = sha3_512((const char*)m_grid, m_gridSize);
-		ROS_INFO("[Grid3D] Calculated SHA512 value: %s", sha_value.c_str());
-
-		input_sha.open(fileName+"sha");
-		std::string readed_sha;
-		if(input_sha.is_open()){
-			getline(input_sha, readed_sha);
-			ROS_INFO("[Grid3D] Readed SHA512 from file: %s", readed_sha.c_str());
-			input_sha.close();
-		}else{
-			ROS_ERROR("[Grid3D] Couldn't read SHA512 data of gridm file, recomputing grid");
-			return false;
-		}
-		//Check that both are the same
-		if(readed_sha.compare(sha_value) != 0){
-			ROS_ERROR("[Grid3D] Found different SHA values between for gridm!");
-			return false;
-		}
-		
-		return true;
-	}
-#pragma GCC diagnostic pop
 	
 	// void computePointCloud(void)
 	// {
@@ -807,6 +768,7 @@ protected:
 	{
 		return (int)(x*m_oneDivRes) + (int)(y*m_oneDivRes)*m_gridStepY + (int)(z*m_oneDivRes)*m_gridStepZ;
 	}
+
 };
 
 

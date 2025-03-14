@@ -18,6 +18,7 @@
     <arg name="heuristic"         default="euclidean"/>
 
     <arg name="save_data"           default="false"/>
+    <arg name="use_marsim"          default="false"/>
     <!-- This should be a folder -->
     <arg name="data_folder"         default="$(env HOME)"/>
 
@@ -31,8 +32,10 @@
     <arg name="robot_radius"        default="0.4"/> 
     
     <arg name="output" default="screen"/>
-    <node pkg="heuristic_planners" type="planner_ros_node" name="planner_ros_node" output="$(arg output)" required="true" launch-prefix="gdb -ex run --args">
+    <node pkg="heuristic_planners" type="planner_ros_node" name="planner_ros_node" output="$(arg output)" required="true" >
         <remap from="points" to="/grid3d/map_point_cloud"/>
+        <!-- <remap from="points" to="/map_generator/global_cloud"/> -->
+        <!-- <remap from="global_cloud" to="/map_generator/global_cloud"/> -->
         <param name="map_path"              value="$(arg map)"/>
         <param name="world_size_x"          value="$(arg world_size_x)"/>
         <param name="world_size_y"          value="$(arg world_size_y)"/>
@@ -51,6 +54,7 @@
 
         <param name="cost_scaling_factor"   value="$(arg cost_scaling_factor)"/>
         <param name="robot_radius"          value="$(arg robot_radius)"/>
+        <param name="use_marsim"            value="$(arg use_marsim)"/>
 
         <param name="ground_height_threshold" value="9.0" />
         <param name="ground_to_air_transition_cost" value="0" />

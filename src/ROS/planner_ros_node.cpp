@@ -75,6 +75,7 @@ private:
         input_map_ = 1;
     }
 
+
     void pointCloudCallback(const pcl::PointCloud<pcl::PointXYZ>::ConstPtr &_points)
     {
 
@@ -339,13 +340,6 @@ private:
         if(save_data_)
             ROS_INFO_STREAM("Saving path planning data results to " << data_folder_);
 
-        //
-        if( input_map_ == 1 ){
-            Planners::utils::configureWorldFromOccupancyWithCosts(occupancy_grid_, *algorithm_);
-        }else if( input_map_ == 2 ){
-            Planners::utils::configureWorldFromPointCloud(boost::make_shared<pcl::PointCloud<pcl::PointXYZ>>(cloud_), *algorithm_, resolution_);
-            Planners::utils::configureWorldCosts(*m_grid3d_, *algorithm_);
-        }
         //Algorithm specific parameters. Its important to set line of sight after configuring world size(it depends on the resolution)
         float sight_dist, cost_weight;
         lnh_.param("max_line_of_sight_distance", sight_dist, (float)1000.0); // In meters
