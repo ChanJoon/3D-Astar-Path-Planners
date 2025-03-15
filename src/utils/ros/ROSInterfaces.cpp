@@ -5,38 +5,38 @@ namespace Planners
     namespace utils
     {
 
-        Vec3i discretePoint(const pcl::PointXYZ &_point, const double &_res)
+        Eigen::Vector3i discretePoint(const pcl::PointXYZ &_point, const double &_res)
         { //Take care of negative values
 
             return {static_cast<int>(std::round(_point.x / _res)),
                     static_cast<int>(std::round(_point.y / _res)),
                     static_cast<int>(std::round(_point.z / _res))};
         }
-        Vec3i discretePoint(const geometry_msgs::Point &_msg, const double &_res)
+        Eigen::Vector3i discretePoint(const geometry_msgs::Point &_msg, const double &_res)
         {
 
             return {static_cast<int>(std::round(_msg.x / _res)),
                     static_cast<int>(std::round(_msg.y / _res)),
                     static_cast<int>(std::round(_msg.z / _res))};
         }
-        Vec3i discretePose(const geometry_msgs::Pose &_msg, const double &_res)
+        Eigen::Vector3i discretePose(const geometry_msgs::Pose &_msg, const double &_res)
         {
 
             return {static_cast<int>(std::round(_msg.position.x / _res)),
                     static_cast<int>(std::round(_msg.position.y / _res)),
                     static_cast<int>(std::round(_msg.position.z / _res))};
         }
-        geometry_msgs::Point continousPoint(const Vec3i &_vec, const double &_res)
+        geometry_msgs::Point continousPoint(const Eigen::Vector3i &_vec, const double &_res)
         {
             geometry_msgs::Point ret;
 
-            ret.x = _vec.x * _res;
-            ret.y = _vec.y * _res;
-            ret.z = _vec.z * _res;
+            ret.x = _vec.x() * _res;
+            ret.y = _vec.y() * _res;
+            ret.z = _vec.z() * _res;
 
             return ret;
         }
-        inline Vec3i indexToXY(const unsigned int &_index, const unsigned int _grid_width)
+        inline Eigen::Vector3i indexToXY(const unsigned int &_index, const unsigned int _grid_width)
         {
 
             return {static_cast<int>(std::floor(_index % _grid_width)),
@@ -49,14 +49,14 @@ namespace Planners
 
             if (_set_size)
             {
-                Vec3i world_size;
-                world_size.x = std::floor(_grid.info.width / _grid.info.resolution);
-                world_size.y = std::floor(_grid.info.height / _grid.info.resolution);
-                world_size.z = 1;
+                Eigen::Vector3i world_size;
+                world_size.x() = std::floor(_grid.info.width / _grid.info.resolution);
+                world_size.y() = std::floor(_grid.info.height / _grid.info.resolution);
+                world_size.z() = 1;
                 _algorithm.setWorldSize(world_size, _grid.info.resolution);
             }
 
-            Vec3i cell;
+            Eigen::Vector3i cell;
             for (long unsigned int i = 0; i < _grid.data.size(); ++i)
             {
                 // 100 should be costmap_2d::LETHAL_OBSTACLE but by the values that map server publishes are between 0 and 100
@@ -74,14 +74,14 @@ namespace Planners
 
             if (_set_size)
             {
-                Vec3i world_size;
-                world_size.x = std::floor(_grid.info.width / _grid.info.resolution);
-                world_size.y = std::floor(_grid.info.height / _grid.info.resolution);
-                world_size.z = 1;
+                Eigen::Vector3i world_size;
+                world_size.x() = std::floor(_grid.info.width / _grid.info.resolution);
+                world_size.y() = std::floor(_grid.info.height / _grid.info.resolution);
+                world_size.z() = 1;
                 _algorithm.setWorldSize(world_size, _grid.info.resolution);
             }
 
-            Vec3i cell;
+            Eigen::Vector3i cell;
             for (long unsigned int i = 0; i < _grid.data.size(); ++i)
             {
                 // int data = _grid.data[i];
@@ -110,18 +110,18 @@ namespace Planners
             auto world_size = _algorithm.getWorldSize();
             auto resolution = _algorithm.getWorldResolution();
 
-            if (world_size.x <= 0 || world_size.y <= 0 || world_size.z <= 0)
+            if (world_size.x() <= 0 || world_size.y() <= 0 || world_size.z() <= 0)
             {
-                ROS_ERROR("Invalid world size: [%d, %d, %d]", world_size.x, world_size.y, world_size.z);
+                ROS_ERROR("Invalid world size: [%d, %d, %d]", world_size.x(), world_size.y(), world_size.z());
                 return false;
             }
             try {
                 #pragma omp parallel for collapse(3)
-                for (int k = 0; k < world_size.z; k++)
+                for (int k = 0; k < world_size.z(); k++)
                 {
-                    for (int j = 0; j < world_size.y; j++)
+                    for (int j = 0; j < world_size.y(); j++)
                     {
-                        for (int i = 0; i < world_size.x; i++)
+                        for (int i = 0; i < world_size.x(); i++)
                         {
                             //JAC: Precision
                             float cost = _grid.getCellCost(i * resolution, j * resolution, k * resolution);

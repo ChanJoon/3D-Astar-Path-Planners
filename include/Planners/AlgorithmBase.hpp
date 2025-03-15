@@ -28,19 +28,16 @@
 #include "utils/time.hpp"
 #include "utils/geometry_utils.hpp"
 #include "utils/LineOfSight.hpp"
+#include "plan_env/edt_environment.h"
 
 namespace Planners
 {
     using namespace utils;
-    using HeuristicFunction = std::function<unsigned int(Vec3i, Vec3i)>;
+    using HeuristicFunction = std::function<unsigned int(Eigen::Vector3i, Eigen::Vector3i)>;
 
     class Heuristic;
     class Clock;
 
-    /**
-     * @brief Main base class that implements useful functions for children algorithm class 
-     * and provides a guide to implement any new algorithm.
-     */
     class AlgorithmBase
     {
 
@@ -72,42 +69,12 @@ namespace Planners
          */
         AlgorithmBase(bool _use_3d, const std::string &_algorithm_name);
 
-        /**
-         * @brief Set the World Size object. This method call the resizeWorld method 
-         * from the internal discrete world object
-         * 
-         * @param worldSize_ Discrete world size vector in units of resolution.
-         * @param _resolution resolution to save inside the world object
-         */
-        void setWorldSize(const Vec3i &worldSize_,const double _resolution);
+        void setEnvironment(EDTEnvironment::Ptr &env);
 
-        /**
-         * @brief Get the World Size, it simply call the getWorldSize method from the
-         * discrete world internal object
-         * 
-         * @return Vec3i discrete world bounds
-         */
-        Vec3i getWorldSize();
-        /**
-         * @brief Get the World Resolution that is been used by the internal 
-         * discrete world object
-         * @return double resolution 
-         */
+        void setWorldSize(const Eigen::Vector3i &worldSize_,const double _resolution);
+        Eigen::Vector3i getWorldSize();
         double getWorldResolution();
-
-        /**
-         * @brief Get a pointer to the inner world object 
-         * 
-         * @return utils::DiscreteWorld* 
-         */
         utils::DiscreteWorld* getInnerWorld();
-
-        /**
-         * @brief Configure the heuristic from the list of static functions in the heuristic.hpp
-         * header
-         * @param heuristic_ Should be one of the static functions of the Heuristic Class
-         * for example Heuristic::Euclidean
-         */
         void setHeuristic(HeuristicFunction heuristic_);
         
         /**
@@ -117,14 +84,14 @@ namespace Planners
          * @param do_inflate enable inflation (mark surrounding coordinates as occupied)
          * @param steps inflation steps (in multiples of the resolution value)
          */
-        void addCollision(const Vec3i &coordinates_, bool do_inflate, unsigned int steps);
+        void addCollision(const Eigen::Vector3i &coordinates_, bool do_inflate, unsigned int steps);
         
         /**
          * @brief Calls the addCollision with the internal inflation configuration values
          * 
          * @param coordinates_ Discrete coordinates vector
          */
-        void addCollision(const Vec3i &coordinates_);
+        void addCollision(const Eigen::Vector3i &coordinates_);
 
         /**
          * @brief Function to use in the future to configure the cost of each node
@@ -134,7 +101,7 @@ namespace Planners
          * @return true 
          * @return false 
          */
-        bool configureCellCost(const Vec3i &coordinates_, const double &_cost);
+        bool configureCellCost(const Eigen::Vector3i &coordinates_, const double &_cost);
 
         /**
          * @brief Check if a set of discrete coordinates are marked as occupied
@@ -143,7 +110,7 @@ namespace Planners
          * @return true Occupied
          * @return false not occupied
          */
-        bool detectCollision(const Vec3i &coordinates_);
+        bool detectCollision(const Eigen::Vector3i &coordinates_);
 
         /**
          * @brief Main function that should be inherit by each algorithm. 
@@ -154,7 +121,7 @@ namespace Planners
          * @param _target Goal discrete coordinates
          * @return PathData Results stored as PathData object
          */
-        virtual PathData findPath(const Vec3i &_source, const Vec3i &_target) = 0;
+        virtual PathData findPath(const Eigen::Vector3i &_source, const Eigen::Vector3i &_target) = 0;
 
         /**
          * @brief Configure the simple inflation implementation
@@ -165,22 +132,8 @@ namespace Planners
         void setInflationConfig(const bool _inflate, const unsigned int _inflation_steps) 
         { do_inflate_ = _inflate; inflate_steps_ = _inflation_steps;}
 
-        /**
-         * @brief Set the Cost Factor object
-         * 
-         */
         virtual void setCostFactor(const float &_factor){ cost_weight_ = _factor; }
-
-        /**
-         * @brief Set the Max Line Of Sight object
-         * 
-         * @param _max_line_of_sight 
-         */
         virtual void setMaxLineOfSight(const float &_max_line_of_sight){ max_line_of_sight_cells_ = std::floor(_max_line_of_sight/discrete_world_.getResolution()); }
-        /**
-         * @brief Deleted function to be inherit from
-         * 
-         */
         virtual void publishOccupationMarkersMap() = 0;
 
     protected:
@@ -192,7 +145,7 @@ namespace Planners
          * @param _directions Directions vector to inflate
          * @param _inflate_steps number of cells to inflate in each direction
          */
-        void inflateNodeAsCube(const Vec3i &_ref,
+        void inflateNodeAsCube(const Eigen::Vector3i &_ref,
                                const CoordinateList &_directions,
                                const unsigned int &_inflate_steps);
         
@@ -209,20 +162,21 @@ namespace Planners
          */
         virtual PathData createResultDataObject(const Node* _last, utils::Clock &_timer, 
                                                 const size_t _explored_nodes, bool _solved, 
-                                                const Vec3i &_start, const unsigned int _sight_checks);
+                                                const Eigen::Vector3i &_start, const unsigned int _sight_checks);
 
                                                         
-        HeuristicFunction heuristic; /*!< TODO Comment */
-        CoordinateList direction; /*!< TODO Comment */
+        HeuristicFunction heuristic;
+        CoordinateList direction;
 
-        utils::DiscreteWorld discrete_world_; /*!< TODO Comment */
-        unsigned int inflate_steps_{1}; /*!< TODO Comment */
-        bool do_inflate_{true}; /*!< TODO Comment */
+        utils::DiscreteWorld discrete_world_;
+        EDTEnvironment::Ptr edt_environment_;
+        unsigned int inflate_steps_{1};
+        bool do_inflate_{true};
 
-        double cost_weight_{0}; /*!< TODO Comment */
-        unsigned int max_line_of_sight_cells_{0}; /*!< TODO Comment */
+        double cost_weight_{0};
+        unsigned int max_line_of_sight_cells_{0};
 
-        const std::string algorithm_name_{""}; /*!< TODO Comment */
+        const std::string algorithm_name_{""};
 
     private:
     };

@@ -14,7 +14,7 @@ namespace Planners
 
             for (const auto &i: direction)
             {
-                Vec3i newCoordinates(_s_aux->coordinates + i);
+                Eigen::Vector3i newCoordinates(_s_aux->coordinates + i);
                 Node *successor2 = discrete_world_.getNodePtr(newCoordinates);
                 if (successor2 == nullptr || successor2->occuppied ) continue;
 
@@ -79,7 +79,7 @@ namespace Planners
         return cost;
     }
 
-    PathData LazyThetaStarM2::findPath(const Vec3i &_source, const Vec3i &_target)
+    PathData LazyThetaStarM2::findPath(const Eigen::Vector3i &_source, const Eigen::Vector3i &_target)
     {
         utils::Clock main_timer;
         main_timer.tic();

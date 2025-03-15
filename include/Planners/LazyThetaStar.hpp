@@ -53,7 +53,7 @@ namespace Planners
          * @param _target Goal discrete coordinates
          * @return PathData PathData Results stored as PathData object
          */
-        virtual PathData findPath(const Vec3i &_source, const Vec3i &_target) override;
+        virtual PathData findPath(const Eigen::Vector3i &_source, const Eigen::Vector3i &_target) override;
 
     protected:
 

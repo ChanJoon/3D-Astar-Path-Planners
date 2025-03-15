@@ -220,13 +220,13 @@ public:
 		return m_grid[index].prob;
 	}
 	
-	std::pair<Planners::utils::Vec3i, double>  getClosestObstacle(const Planners::utils::Vec3i& _coords){
+	std::pair<Eigen::Vector3i, double>  getClosestObstacle(const Eigen::Vector3i& _coords){
 
 		pcl::PointXYZI searchPoint;
 
-		searchPoint.x = _coords.x * m_resolution;
-		searchPoint.y = _coords.y * m_resolution;
-		searchPoint.z = _coords.z * m_resolution;
+		searchPoint.x = _coords.x() * m_resolution;
+		searchPoint.y = _coords.y() * m_resolution;
+		searchPoint.z = _coords.z() * m_resolution;
 
 		int k = 1;
 		m_kdtree.setInputCloud(m_cloud);
@@ -235,15 +235,15 @@ public:
 
 		if(m_kdtree.nearestKSearch(searchPoint, k, pointIdxNKNSearch, pointNKNSquaredDistance) > 0){
 
-			Planners::utils::Vec3i result;
+			Eigen::Vector3i result;
 
-			result.x = std::round(m_cloud->points[pointIdxNKNSearch[0]].x / m_resolution);
-			result.y = std::round(m_cloud->points[pointIdxNKNSearch[0]].y / m_resolution);
-			result.z = std::round(m_cloud->points[pointIdxNKNSearch[0]].z / m_resolution);
+			result.x() = std::round(m_cloud->points[pointIdxNKNSearch[0]].x / m_resolution);
+			result.y() = std::round(m_cloud->points[pointIdxNKNSearch[0]].y / m_resolution);
+			result.z() = std::round(m_cloud->points[pointIdxNKNSearch[0]].z / m_resolution);
 
 			return std::make_pair(result, std::sqrt(pointNKNSquaredDistance[k-1]));	
 		}else{
-			return std::make_pair(Planners::utils::Vec3i{}, std::numeric_limits<double>::max());
+			return std::make_pair(Eigen::Vector3i{}, std::numeric_limits<double>::max());
 		}	
 	}
 

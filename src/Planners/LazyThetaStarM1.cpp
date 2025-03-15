@@ -15,7 +15,7 @@ namespace Planners
 
             for (const auto &i: direction)
             {
-                Vec3i newCoordinates(_s_aux->coordinates + i);
+                Eigen::Vector3i newCoordinates(_s_aux->coordinates + i);
                 Node *successor2 = discrete_world_.getNodePtr(newCoordinates);
                 if (successor2 == nullptr || successor2->occuppied ) continue;
 

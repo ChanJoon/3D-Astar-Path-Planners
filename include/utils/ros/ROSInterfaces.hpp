@@ -32,40 +32,40 @@ namespace Planners
     namespace utils
     {
         /**
-         * @brief Discretize a pcl::PointXYZ into a Vec3i object
+         * @brief Discretize a pcl::PointXYZ into a Eigen::Vector3i object
          *   
          * @param _point pcl::PointXYZ object
          * @param _res resolution
-         * @return Vec3i 
+         * @return Eigen::Vector3i 
          */
-        Vec3i discretePoint(const pcl::PointXYZ &_point, const double &_res);
+        Eigen::Vector3i discretePoint(const pcl::PointXYZ &_point, const double &_res);
 
         /**
          * @brief 
          * 
          * @param _point 
          * @param _res 
-         * @return Vec3i 
+         * @return Eigen::Vector3i 
          */
-        Vec3i discretePoint(const pcl::PointXYZI &_point, const double &_res);
+        Eigen::Vector3i discretePoint(const pcl::PointXYZI &_point, const double &_res);
 
         /**
-         * @brief Discretize a geometry_msgs::Point into a Vec3i object
+         * @brief Discretize a geometry_msgs::Point into a Eigen::Vector3i object
          * 
          * @param _msg geoemtry_msgs::Point object
          * @param _res resolution
-         * @return Vec3i 
+         * @return Eigen::Vector3i 
          */
-        Vec3i discretePoint(const geometry_msgs::Point &_msg, const double &_res);
+        Eigen::Vector3i discretePoint(const geometry_msgs::Point &_msg, const double &_res);
 
         /**
          * @brief Discretize a geomtry_msgs::Pose object
          * 
          * @param _msg geometry_msgs::Pose object
          * @param _res resolution
-         * @return Vec3i 
+         * @return Eigen::Vector3i 
          */
-        Vec3i discretePose(const geometry_msgs::Pose &_msg, const double &_res);
+        Eigen::Vector3i discretePose(const geometry_msgs::Pose &_msg, const double &_res);
         /**
          * @brief get a geometry_msgs::Point from a discrete position and resolution
          * 
@@ -73,7 +73,7 @@ namespace Planners
          * @param _res resolution
          * @return geometry_msgs::Point 
          */
-        geometry_msgs::Point continousPoint(const Vec3i &_vec, const double &_res);
+        geometry_msgs::Point continousPoint(const Eigen::Vector3i &_vec, const double &_res);
 
         /**
          * @brief 
@@ -84,7 +84,7 @@ namespace Planners
          * @return T 
          */
        
-        pcl::PointXYZI continousPointPCLXYZI(const Vec3i &_vec, const double &_res);
+        pcl::PointXYZI continousPointPCLXYZI(const Eigen::Vector3i &_vec, const double &_res);
         /**
          * @brief Helper function for the configureWorldFromOccupancy (Grid) function 
          * Given a index an a grid(matrix) width, returns the associated (x,y,0) 
@@ -92,9 +92,9 @@ namespace Planners
          * 
          * @param _index Element of the array
          * @param _grid_width 2D array width or horizontal step
-         * @return Vec3i 
+         * @return Eigen::Vector3i 
          */
-        inline Vec3i indexToXY(const unsigned int &_index, const unsigned int _grid_width);
+        inline Eigen::Vector3i indexToXY(const unsigned int &_index, const unsigned int _grid_width);
         /**
          * @brief Configure the inner world of the algorihtm _algorithm using a nav_msgs::OccupancyGrid
          * It used the resolution in the metadata 

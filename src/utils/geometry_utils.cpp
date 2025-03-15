@@ -12,9 +12,9 @@ namespace Planners
                 float len = 0;
                 for (long unsigned int i = 1; i < _path.size(); i++)
                 {
-                    len += sqrtf(pow((_path[i].x - _path[i - 1].x) * _resolution, 2) +
-                                 pow((_path[i].y - _path[i - 1].y) * _resolution, 2) +
-                                 pow((_path[i].z - _path[i - 1].z) * _resolution, 2));
+                    len += sqrtf(pow((_path[i].x() - _path[i - 1].x()) * _resolution, 2) +
+                                 pow((_path[i].y() - _path[i - 1].y()) * _resolution, 2) +
+                                 pow((_path[i].z() - _path[i - 1].z()) * _resolution, 2));
                 }
                 return len;
             }
@@ -26,11 +26,11 @@ namespace Planners
             {
                 return distanceBetween2Nodes(*_n1, *_n2);
             }
-            unsigned int distanceBetween2Nodes(const Vec3i &_v1, const Vec3i &_v2)
+            unsigned int distanceBetween2Nodes(const Eigen::Vector3i &_v1, const Eigen::Vector3i &_v2)
             {
-                return static_cast<unsigned int>(dist_scale_factor_ * sqrt(pow(_v1.x - _v2.x, 2) +
-                                                                           pow(_v1.y - _v2.y, 2) +
-                                                                           pow(_v1.z - _v2.z, 2)));
+                return static_cast<unsigned int>(dist_scale_factor_ * sqrt(pow(_v1.x() - _v2.x(), 2) +
+                                                                           pow(_v1.y() - _v2.y(), 2) +
+                                                                           pow(_v1.z() - _v2.z(), 2)));
             }
             unsigned int NodesBetween2Nodes(const Node &_n1, const Node &_n2)
             {
@@ -40,15 +40,15 @@ namespace Planners
             {
                 return NodesBetween2Nodes(*_n1, *_n2);
             }
-            unsigned int NodesBetween2Nodes(const Vec3i &_v1, const Vec3i &_v2)
+            unsigned int NodesBetween2Nodes(const Eigen::Vector3i &_v1, const Eigen::Vector3i &_v2)
             {
-                return static_cast<unsigned int>(sqrt(pow(_v1.x - _v2.x, 2) +
-                                                      pow(_v1.y - _v2.y, 2) +
-                                                      pow(_v1.z - _v2.z, 2)));
+                return static_cast<unsigned int>(sqrt(pow(_v1.x() - _v2.x(), 2) +
+                                                      pow(_v1.y() - _v2.y(), 2) +
+                                                      pow(_v1.z() - _v2.z(), 2)));
             }
-            Vec3i abs(const Vec3i &_vec)
+            Eigen::Vector3i abs(const Eigen::Vector3i &_vec)
             {
-                return { std::abs(_vec.x), std::abs(_vec.y), std::abs(_vec.z) };
+                return { std::abs(_vec.x()), std::abs(_vec.y()), std::abs(_vec.z()) };
             }
             utils::CoordinateList getAdjacentPath(const utils::CoordinateList &_path, const utils::DiscreteWorld &_world){
         
@@ -91,12 +91,12 @@ namespace Planners
                 return adjacent_path;
             }
 
-            inline double moduleVector(const Vec3i &_v){
-                return sqrt( _v.x * _v.x + _v.y * _v.y + _v.z * _v.z);
+            inline double moduleVector(const Eigen::Vector3i &_v){
+                return _v.norm();
             }
 #ifdef ROS
-            double angleBetweenThreePoints(const Vec3i &_v1, const Vec3i &_v2, const Vec3i &_v3){
-                return angleBetweenThreePoints(_v1.toEigen(), _v2.toEigen(), _v3.toEigen());
+            double angleBetweenThreePoints(const Eigen::Vector3i &_v1, const Eigen::Vector3i &_v2, const Eigen::Vector3i &_v3){
+                return angleBetweenThreePoints(_v1, _v2, _v3);
             }
             double angleBetweenThreePoints(const Eigen::Vector3d &_v1, const Eigen::Vector3d &_v2, const Eigen::Vector3d &_v3){
 
@@ -108,8 +108,8 @@ namespace Planners
                 return  std::acos( z1.dot(z2) );
             }
 
-            double getCircunferenceRadius(const Vec3i &_v1, const Vec3i &_v2, const Vec3i &_v3){
-                return getCircunferenceRadius(_v1.toEigen(), _v2.toEigen(), _v3.toEigen());
+            double getCircunferenceRadius(const Eigen::Vector3i &_v1, const Eigen::Vector3i &_v2, const Eigen::Vector3i &_v3){
+                return getCircunferenceRadius(_v1, _v2, _v3);
             }
             double getCircunferenceRadius(const Eigen::Vector3d &_v1, const Eigen::Vector3d &_v2, const Eigen::Vector3d &_v3){
             

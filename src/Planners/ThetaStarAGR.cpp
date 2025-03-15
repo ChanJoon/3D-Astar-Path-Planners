@@ -26,8 +26,8 @@ namespace Planners
         if (LineOfSight::bresenham3D(_s_aux->parent, _s2_aux, discrete_world_))
         {
             // Determine ground/air modes based on z-coordinate
-            bool parent_is_ground = (_s_aux->parent->coordinates.z < ground_height_threshold_);
-            bool s2_is_ground = (_s2_aux->coordinates.z < ground_height_threshold_);
+            bool parent_is_ground = (_s_aux->parent->coordinates.z() < ground_height_threshold_);
+            bool s2_is_ground = (_s2_aux->coordinates.z() < ground_height_threshold_);
             unsigned int transition_cost = 0;
             unsigned int mode_factor = 1; // Default for 
             unsigned int flying_cost = 0;
@@ -55,8 +55,8 @@ namespace Planners
         {
             // No line of sight, use direct path from _s_aux to _s2_aux
             auto distance2 = geometry::distanceBetween2Nodes(_s_aux, _s2_aux);
-            bool s_aux_is_ground = (_s_aux->coordinates.z < ground_height_threshold_);
-            bool s2_is_ground = (_s2_aux->coordinates.z < ground_height_threshold_);
+            bool s_aux_is_ground = (_s_aux->coordinates.z() < ground_height_threshold_);
+            bool s2_is_ground = (_s2_aux->coordinates.z() < ground_height_threshold_);
             unsigned int transition_cost = 0;
             unsigned int mode_factor = 1;
             unsigned int flying_cost = 0;
@@ -94,8 +94,8 @@ namespace Planners
         }
         
         // Apply mode-specific costs
-        bool current_is_ground = (_current->coordinates.z < ground_height_threshold_);
-        bool suc_is_ground = (_suc->coordinates.z < ground_height_threshold_);
+        bool current_is_ground = (_current->coordinates.z() < ground_height_threshold_);
+        bool suc_is_ground = (_suc->coordinates.z() < ground_height_threshold_);
         unsigned int transition_cost = 0;
         unsigned int mode_factor = 1;
         unsigned int flying_cost = 0;

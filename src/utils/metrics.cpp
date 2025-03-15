@@ -63,7 +63,7 @@ namespace Planners
                 }
                 return std::make_tuple(0, 0, 0, 0, changes, angles);
             }
-            DistancesData calculateDistancesMetrics(const std::vector<std::pair<utils::Vec3i, double>> &_distances_pair)
+            DistancesData calculateDistancesMetrics(const std::vector<std::pair<Eigen::Vector3i, double>> &_distances_pair)
             {
                 if( _distances_pair.size() > 0 ){
 

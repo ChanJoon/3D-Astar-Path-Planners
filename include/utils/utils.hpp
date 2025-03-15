@@ -18,9 +18,7 @@
 #include <variant>
 #include <cmath>
 #include <memory>
-#ifdef ROS
-#include <Eigen/Dense>
-#endif
+#include <Eigen/Eigen>
 #include <boost/multi_index_container.hpp>
 #include <boost/multi_index/ordered_index.hpp>
 #include <boost/multi_index/identity.hpp>
@@ -33,13 +31,12 @@ namespace Planners
 {
     namespace utils
     {
-        class Vec3i;
         class Node;
         struct NodeComparator;
 
-        using CoordinateList     = std::vector<Planners::utils::Vec3i>;
-        using CoordinateListPtr  = std::shared_ptr<std::vector<Planners::utils::Vec3i>>;
-        using DataVariant        = std::variant<std::string, Vec3i, CoordinateList, double, size_t, int, bool, unsigned int>;
+        using CoordinateList     = std::vector<Eigen::Vector3i>;
+        using CoordinateListPtr  = std::shared_ptr<std::vector<Eigen::Vector3i>>;
+        using DataVariant        = std::variant<std::string, Eigen::Vector3i, CoordinateList, double, size_t, int, bool, unsigned int>;
         using PathData           = std::map<std::string, DataVariant>;
 
         //Compile time constants
@@ -94,115 +91,6 @@ namespace Planners
         }
 
         /**
-         * @brief This is one of the main classes used internally by the algorithms. 
-         * It only stores a set of 3D discrete coordinates values 
-         * and has some operator overloaded implementations to easily work with objects
-         */
-        class Vec3i
-        {
-            public:
-            int x, y, z;    
-            /**
-             * @brief 
-             * 
-             * @param coordinates_ 
-             * @return true 
-             * @return false 
-             */
-            bool operator==(const Vec3i &coordinates_);
-            /**
-             * @brief 
-             * 
-             * @param coordinates_ 
-             * @return true if all of the coordinates are greather or equal than the others
-             * @return false if any of the coordinates are not greather or equal than the others
-             */
-            bool operator>=(const Vec3i &coordinates_);
-            /**
-             * @brief 
-             * 
-             * @param coordinates_ 
-             * @return true if all the coordinates are <= of the corresponding ones
-             * @return false if any of the coordinates are not <=
-             */
-            bool operator<=(const Vec3i &coordinates_);
-            
-            /**
-             * @brief 
-             * 
-             * @param _divid 
-             * @return Planners::utils::Vec3i& 
-             */
-            Planners::utils::Vec3i &operator/=(float _divid);
-
-            /**
-             * @brief 
-             * 
-             * @param right_ 
-             * @return Vec3i 
-             */
-            Vec3i operator+(const Vec3i &right_) const
-            {
-                return {this->x + right_.x, this->y + right_.y, this->z + right_.z};
-            }
-
-            /**
-             * @brief 
-             * 
-             * @param right_ 
-             * @return Vec3i 
-             */
-            Vec3i operator-(const Vec3i &right_) const
-            {
-                return {this->x - right_.x, this->y - right_.y, this->z - right_.z};
-            }
-
-            /**
-             * @brief 
-             * 
-             * @param _mult 
-             * @return Vec3i 
-             */
-            inline Vec3i operator*(int &_mult) const
-            {
-                return {this->x * _mult, this->y * _mult, this->z * _mult };
-            }
-
-#ifdef ROS
-            /**
-             * @brief 
-             * 
-             * @return Eigen::Vector3d 
-             */
-            Eigen::Vector3d toEigen() const{
-                return Eigen::Vector3d(x, y, y);
-            }
-#endif
-        };
-        /**
-         * @brief 
-         * 
-         * @param _mult 
-         * @param _vec 
-         * @return Planners::utils::Vec3i 
-         */
-        inline Planners::utils::Vec3i operator*(const int &_mult, const Planners::utils::Vec3i &_vec){
-                    
-            return { _vec.x * _mult, _vec.y * _mult, _vec.z * _mult};
-        }
-        /**
-         * @brief 
-         * 
-         * @param os 
-         * @param dt 
-         * @return std::ostream& 
-         */
-        inline std::ostream& operator<<(std::ostream& os, const Vec3i& dt)
-        {
-            os << "[" << dt.x << ", " << dt.y << ", " << dt.z << "]";
-            return os;
-        }
-        /**
          * @brief This object store the main information used by the algorithms 
          * 
          */
@@ -211,7 +99,7 @@ namespace Planners
             public:
             Node *parent{nullptr};
 
-            Planners::utils::Vec3i coordinates;
+            Eigen::Vector3i coordinates;
 
             unsigned int G{0}, H{0}, C{0};
             
@@ -229,26 +117,37 @@ namespace Planners
              * @param coord_ 
              * @param parent_ 
              */
-            Node(Planners::utils::Vec3i coord_, Node *parent_ = nullptr);
+            Node(Eigen::Vector3i coord_, Node *parent_ = nullptr)
+            {
+                parent = parent_;
+                coordinates = coord_;
+                G = H =0;
+            }
             /**
              * @brief Construct a new Node object
              * 
              */
-            Node();
+            Node(){}
 
             /**
              * @brief Get the Score object
              * 
              * @return unsigned int 
              */
-            unsigned int getScore();
+            unsigned int getScore()
+            {
+                return G + H;
+            }
 
             /**
              * @brief Get the Score With Safety Cost object
              * 
              * @return unsigned int 
              */
-            unsigned int getScoreWithSafetyCost();
+            unsigned int getScoreWithSafetyCost()
+            {
+                return G + H + cost;  //Add the distance cost.
+            }
 
         };
                 

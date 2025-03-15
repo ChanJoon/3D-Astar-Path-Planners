@@ -15,9 +15,9 @@ namespace Planners
          * @param _H 
          * @param _S 
          * @param _V 
-         * @return utils::Vec3i 
+         * @return Eigen::Vector3i 
          */
-        utils::Vec3i HSVtoRGB(float _H,const float _S,const float _V)
+        Eigen::Vector3i HSVtoRGB(float _H,const float _S,const float _V)
         {
             if (_S > 100 || _S < 0 || _V > 100 || _V < 0)
             {
@@ -65,7 +65,7 @@ namespace Planners
             int G = (g + m) * 255;
             int B = (b + m) * 255;
 
-            return utils::Vec3i{R, G, B};
+            return Eigen::Vector3i{R, G, B};
         }
     }
 }

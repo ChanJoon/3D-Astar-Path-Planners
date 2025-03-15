@@ -78,9 +78,9 @@ void AStar::publishOccupationMarkersMap()
         if(!it.occuppied) continue;
         pcl::PointXYZ point;
 
-		point.x = it.coordinates.x * resolution_;
-		point.y = it.coordinates.y * resolution_;
-		point.z = it.coordinates.z * resolution_;
+		point.x = it.coordinates.x() * resolution_;
+		point.y = it.coordinates.y() * resolution_;
+		point.z = it.coordinates.z() * resolution_;
 		occupancy_marker_.push_back(point);
     }
 
@@ -152,11 +152,11 @@ inline unsigned int AStar::computeG(const Node* _current, Node* _suc,  unsigned 
 
 #pragma GCC diagnostic pop
 
-void AStar::exploreNeighbours(Node* _current, const Vec3i &_target, node_by_position &_index_by_pos){
+void AStar::exploreNeighbours(Node* _current, const Eigen::Vector3i &_target, node_by_position &_index_by_pos){
     
     for (unsigned int i = 0; i < direction.size(); ++i) {
             
-        Vec3i newCoordinates = _current->coordinates + direction[i];
+        Eigen::Vector3i newCoordinates = _current->coordinates + direction[i];
         Node *successor = discrete_world_.getNodePtr(newCoordinates);
         //Skip the neighbour if it is not valid, occupied, or already in teh
         //closed list
@@ -185,7 +185,7 @@ void AStar::exploreNeighbours(Node* _current, const Vec3i &_target, node_by_posi
         }
     }
 }
-PathData AStar::findPath(const Vec3i &_source, const Vec3i &_target)
+PathData AStar::findPath(const Eigen::Vector3i &_source, const Eigen::Vector3i &_target)
 {
     Node *current = nullptr;
 

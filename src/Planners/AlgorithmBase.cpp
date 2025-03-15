@@ -1,4 +1,5 @@
 #include "Planners/AlgorithmBase.hpp"
+#include "plan_env/sdf_map.h"
 
 namespace Planners
 {
@@ -27,11 +28,17 @@ namespace Planners
             direction = directions2d;
         }
     }
-    void AlgorithmBase::setWorldSize(const Vec3i &_worldSize,const double _resolution)
+    void AlgorithmBase::setEnvironment(EDTEnvironment::Ptr &env){
+        edt_environment_ = env;
+    }
+
+    //////////////////////////////////////////////////////////////////////////////////
+    //TODO(Chanjoon) Below four functions should be removed in the future 
+    void AlgorithmBase::setWorldSize(const Eigen::Vector3i &_worldSize,const double _resolution)
     {
         discrete_world_.resizeWorld(_worldSize, _resolution);
     }
-    Vec3i AlgorithmBase::getWorldSize(){
+    Eigen::Vector3i AlgorithmBase::getWorldSize(){
         return discrete_world_.getWorldSize();
     }
     double AlgorithmBase::getWorldResolution(){
@@ -40,16 +47,17 @@ namespace Planners
     utils::DiscreteWorld* AlgorithmBase::getInnerWorld(){
         return &discrete_world_;
     }
+    //////////////////////////////////////////////////////////////////////////////////
 
     void AlgorithmBase::setHeuristic(HeuristicFunction heuristic_)
     {
         heuristic = std::bind(heuristic_, std::placeholders::_1, std::placeholders::_2);
     }
-    bool AlgorithmBase::configureCellCost(const Vec3i &coordinates_, const double &_cost){
+    bool AlgorithmBase::configureCellCost(const Eigen::Vector3i &coordinates_, const double &_cost){
 
         return discrete_world_.setNodeCost(coordinates_, _cost);
     }
-    void AlgorithmBase::addCollision(const Vec3i &coordinates_, bool do_inflate, unsigned int steps)
+    void AlgorithmBase::addCollision(const Eigen::Vector3i &coordinates_, bool do_inflate, unsigned int steps)
     {
         if (do_inflate)
         {
@@ -60,11 +68,11 @@ namespace Planners
             discrete_world_.setOccupied(coordinates_);
         }
     }
-    void AlgorithmBase::addCollision(const Vec3i &coordinates_)
+    void AlgorithmBase::addCollision(const Eigen::Vector3i &coordinates_)
     {
         addCollision(coordinates_, do_inflate_, inflate_steps_);
     }
-    bool AlgorithmBase::detectCollision(const Vec3i &coordinates_)
+    bool AlgorithmBase::detectCollision(const Eigen::Vector3i &coordinates_)
     {
         if (discrete_world_.isOccupied(coordinates_))
         {
@@ -72,7 +80,7 @@ namespace Planners
         }
         return false;
     }
-    void AlgorithmBase::inflateNodeAsCube(const Vec3i &_ref, const CoordinateList &_directions, const unsigned int &_inflate_steps)
+    void AlgorithmBase::inflateNodeAsCube(const Eigen::Vector3i &_ref, const CoordinateList &_directions, const unsigned int &_inflate_steps)
     {
         for (const auto &it : _directions)
         {
@@ -86,7 +94,7 @@ namespace Planners
 
     PathData AlgorithmBase::createResultDataObject(const Node* _last, utils::Clock &_timer, 
                                                     const size_t _explored_nodes, bool _solved,
-                                                    const Vec3i &_start, const unsigned int _sight_checks){
+                                                    const Eigen::Vector3i &_start, const unsigned int _sight_checks){
                                     
         PathData result_data;
 

@@ -69,7 +69,7 @@ namespace Planners
              * @param _v2 
              * @return unsigned int 
              */
-            unsigned int distanceBetween2Nodes(const Vec3i &_v1, const Vec3i &_v2);
+            unsigned int distanceBetween2Nodes(const Eigen::Vector3i &_v1, const Eigen::Vector3i &_v2);
             /**
              * @brief Discrete distance 
              * 
@@ -93,15 +93,15 @@ namespace Planners
              * @param _v2 
              * @return unsigned int 
              */
-            unsigned int NodesBetween2Nodes(const Vec3i &_v1, const Vec3i &_v2);
+            unsigned int NodesBetween2Nodes(const Eigen::Vector3i &_v1, const Eigen::Vector3i &_v2);
 
             /**
              * @brief Returns the absolute value vector 
              * 
              * @param _vec 
-             * @return Vec3i 
+             * @return Eigen::Vector3i 
              */
-            Vec3i abs(const Vec3i &_vec);
+            Eigen::Vector3i abs(const Eigen::Vector3i &_vec);
 
             /**
              * @brief 
@@ -110,7 +110,7 @@ namespace Planners
              * @param _v2 
              * @return int 
              */
-            int dotProduct(const Vec3i &_v1, const Vec3i &_v2);
+            int dotProduct(const Eigen::Vector3i &_v1, const Eigen::Vector3i &_v2);
 
             /**
              * @brief 
@@ -118,7 +118,7 @@ namespace Planners
              * @param _v 
              * @return double 
              */
-            double moduleVector(const Vec3i &_v);
+            double moduleVector(const Eigen::Vector3i &_v);
 
             /**
              * @brief 
@@ -128,7 +128,7 @@ namespace Planners
              * @param _v3 
              * @return double 
              */
-            double angleBetweenThreePoints(const Vec3i &_v1, const Vec3i &_v2, const Vec3i &_v3);
+            double angleBetweenThreePoints(const Eigen::Vector3i &_v1, const Eigen::Vector3i &_v2, const Eigen::Vector3i &_v3);
 
 #ifdef ROS
             /**
@@ -149,7 +149,7 @@ namespace Planners
              * @param _v3 
              * @return double 
              */
-            double getCircunferenceRadius(const Vec3i &_v1, const Vec3i &_v2, const Vec3i &_v3);
+            double getCircunferenceRadius(const Eigen::Vector3i &_v1, const Eigen::Vector3i &_v2, const Eigen::Vector3i &_v3);
 
             /**
              * @brief Get the Circunference Radius object

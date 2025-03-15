@@ -20,10 +20,9 @@
   <build_depend>octomap_server</build_depend>
   <build_depend>costmap_2d</build_depend>
   <build_depend>message_generation</build_depend>
-  <build_depend>doxygen</build_depend>
-  <build_depend>libssl-dev</build_depend>
   <build_depend>boost</build_depend>
   <build_depend>eigen</build_depend>
+  <build_depend>cv_bridge</build_depend>
   
   <build_export_depend>std_msgs</build_export_depend>
   <build_export_depend>visualization_msgs</build_export_depend>
@@ -35,10 +34,9 @@
   <build_export_depend>octomap_ros</build_export_depend>
   <build_export_depend>octomap_server</build_export_depend>
   <build_export_depend>costmap_2d</build_export_depend>
-  <build_export_depend>doxygen</build_export_depend>
-  <build_export_depend>libssl-dev</build_export_depend>
   <build_export_depend>boost</build_export_depend>
   <build_export_depend>eigen</build_export_depend>
+  <build_export_depend>cv_bridge</build_export_depend>
 
   <exec_depend>geometry_msgs</exec_depend>
   <exec_depend>visualization_msgs</exec_depend>
@@ -52,15 +50,8 @@
   <exec_depend>costmap_2d</exec_depend>
   <exec_depend>message_runtime</exec_depend>
   <exec_depend>map_server</exec_depend>
-  <exec_depend>doxygen</exec_depend>
-  <exec_depend>libssl-dev</exec_depend>
   <exec_depend>boost</exec_depend>
   <exec_depend>eigen</exec_depend>
+  <exec_depend>cv_bridge</exec_depend>
 
-
-  <!-- The export tag contains other, unspecified, tags -->
-  <export>
-    <!-- Other tools can request additional information be placed here -->
-
-  </export>
 </package>

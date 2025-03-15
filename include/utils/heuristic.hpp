@@ -32,9 +32,9 @@ namespace Planners
          * 
          * @param _source 
          * @param _target 
-         * @return Vec3i 
+         * @return Eigen::Vector3i 
          */
-        static Vec3i getDelta(const Vec3i &_source, const Vec3i &_target);
+        static Eigen::Vector3i getDelta(const Eigen::Vector3i &_source, const Eigen::Vector3i &_target);
 
     public:
         /**
@@ -44,7 +44,7 @@ namespace Planners
          * @param _target 
          * @return unsigned int 
          */
-        static unsigned int manhattan(const Vec3i &_source, const Vec3i &_target);
+        static unsigned int manhattan(const Eigen::Vector3i &_source, const Eigen::Vector3i &_target);
         /**
          * @brief Euclidean heuristic. This is the one used by the standard algorithms
          * 
@@ -52,7 +52,7 @@ namespace Planners
          * @param _target 
          * @return unsigned int 
          */
-        static unsigned int euclidean(const Vec3i &_source, const Vec3i &_target);
+        static unsigned int euclidean(const Eigen::Vector3i &_source, const Eigen::Vector3i &_target);
 
         /**
          * @brief 
@@ -61,7 +61,7 @@ namespace Planners
          * @param _target 
          * @return unsigned int 
          */
-        static unsigned int euclideanOptimized(const Vec3i &_source, const Vec3i &_target);
+        static unsigned int euclideanOptimized(const Eigen::Vector3i &_source, const Eigen::Vector3i &_target);
 
         /**
          * @brief 
@@ -71,7 +71,7 @@ namespace Planners
          * @param _target 
          * @return unsigned int 
          */
-        static unsigned int euclideanAttractive(const float _factor, const Vec3i &_source, const Vec3i &_target);
+        static unsigned int euclideanAttractive(const float _factor, const Eigen::Vector3i &_source, const Eigen::Vector3i &_target);
 
         /**
          * @brief  Octogonal heuristic
@@ -80,13 +80,13 @@ namespace Planners
          * @param _target 
          * @return unsigned int 
          */
-        static unsigned int octagonal(const Vec3i &_source, const Vec3i &_target);
+        static unsigned int octagonal(const Eigen::Vector3i &_source, const Eigen::Vector3i &_target);
         /**
          * @brief Dijkstra heuristic. (Absence of heuristic, always returns 0)
          * 
          * @return unsigned int 
          */
-        static unsigned int dijkstra(const Vec3i &_source, const Vec3i &_target);
+        static unsigned int dijkstra(const Eigen::Vector3i &_source, const Eigen::Vector3i &_target);
 
     };
 

@@ -67,10 +67,10 @@ namespace Planners{
          * @return PathData PathData Results stored as PathData object
          * Reminder: 
          * PathData    = std::map<std::string, Planners::utils::DataVariant> 
-         * DataVariant = std::variant<std::string, Vec3i, CoordinateList, double, size_t, int, bool, unsigned int>;
+         * DataVariant = std::variant<std::string, Eigen::Vector3i, CoordinateList, double, size_t, int, bool, unsigned int>;
          * TODO: Replace map here by unordered_map. Not much important, but it does not make sense to use a map.
          */
-        PathData findPath(const Vec3i &_source, const Vec3i &_target) override;
+        PathData findPath(const Eigen::Vector3i &_source, const Eigen::Vector3i &_target) override;
         
         /**
          * @brief Published occupation markers map to visualize the loaded map in RVIZ
@@ -125,7 +125,7 @@ namespace Planners{
          * This operation of erase and re-insert is performed in order to update the position
          * of the node in the container. 
          */
-        virtual void exploreNeighbours(Node* _current, const Vec3i &_target,node_by_position &_index_by_pos);
+        virtual void exploreNeighbours(Node* _current, const Eigen::Vector3i &_target,node_by_position &_index_by_pos);
 
         /**
          * @brief This functions implements the algorithm G function. 

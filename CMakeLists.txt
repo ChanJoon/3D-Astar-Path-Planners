@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.10.2)
 project(heuristic_planners)
 
-add_compile_options(-std=c++17 -Wall -Werror -Wextra -pedantic)
+add_compile_options(-std=c++17 -Wall -Wextra -pedantic)
 
 option(BUILD_ROS_SUPPORT    "Build with ROS Support" ON)
 option(OPTIMIZE_FLAG        "Enable Compiler Optimization for Runtime Performance" ON)
@@ -40,9 +40,11 @@ if(BUILD_ROS_SUPPORT)
     pcl_ros
     octomap_ros
     costmap_2d
+    cv_bridge
   )
-  find_package (Eigen3 REQUIRED NO_MODULE)
-  find_package(OpenSSL REQUIRED)
+  find_package (Eigen3 REQUIRED)
+  find_package(PCL 1.7 REQUIRED)
+
   if(BUILD_DEBUG)
     add_definitions(-DPUB_EXPLORED_NODES)
   endif()
@@ -65,15 +67,17 @@ generate_messages(
 catkin_package(
  INCLUDE_DIRS include
  LIBRARIES AlgorithmBase AStar AStarM1 AStarM2 ThetaStar ThetaStarM1 ThetaStarM2 ThetaStarAGR LazyThetaStar LazyThetaStarM1 LazyThetaStarM1Mod LazyThetaStarM2
- CATKIN_DEPENDS std_msgs visualization_msgs geometry_msgs nav_msgs roscpp message_runtime costmap_2d
+ CATKIN_DEPENDS std_msgs visualization_msgs geometry_msgs nav_msgs roscpp message_runtime costmap_2d cv_bridge
 )
 endif()
 
 include_directories(
   include
   ${catkin_INCLUDE_DIRS}
-  ${CMAKE_CURRENT_SOURCE_DIR}/include/voro++-0.4.6
+  ${PCL_INCLUDE_DIRS}
+  ${Eigen3_INCLUDE_DIRS}
   ${CMAKE_CURRENT_SOURCE_DIR}/include/bonxai
+  ${CMAKE_CURRENT_SOURCE_DIR}/include/plan_env
 )
 
 ##This is True by default but it's good to have it here as a reminder
@@ -81,7 +85,6 @@ set(BUILD_SHARED_LIBS TRUE)
 list(APPEND ${PROJECT_NAME}_UTILS_SOURCES src/utils/geometry_utils.cpp
                                           src/utils/heuristic.cpp
                                           src/utils/LineOfSight.cpp
-                                          src/utils/utils.cpp       
                                           src/utils/metrics.cpp       
                                           )
 if(BUILD_ROS_SUPPORT)
@@ -107,8 +110,16 @@ add_library(LazyThetaStarM1    src/Planners/LazyThetaStarM1.cpp )
 add_library(LazyThetaStarM1Mod src/Planners/LazyThetaStarM1Mod.cpp )
 add_library(LazyThetaStarM2    src/Planners/LazyThetaStarM2.cpp )
 
+add_library(PlanEnv            src/plan_env/edt_environment.cpp
+                               src/plan_env/obj_predictor.cpp
+                               src/plan_env/raycast.cpp
+                               src/plan_env/sdf_map.cpp)
+target_link_libraries(PlanEnv
+  ${catkin_LIBRARIES}
+  ${PCL_LIBRARIES}
+)
 
-list(APPEND ${PROJECT_NAME}_LIBRARIES AlgorithmBase AStar AStarM1 AStarM2 ThetaStar ThetaStarM1 ThetaStarM2 ThetaStarAGR LazyThetaStar LazyThetaStarM1 LazyThetaStarM1Mod LazyThetaStarM2)  
+list(APPEND ${PROJECT_NAME}_LIBRARIES AlgorithmBase AStar AStarM1 AStarM2 ThetaStar ThetaStarM1 ThetaStarM2 ThetaStarAGR LazyThetaStar LazyThetaStarM1 LazyThetaStarM1Mod LazyThetaStarM2 PlanEnv)  
 target_link_libraries(${${PROJECT_NAME}_LIBRARIES} ${catkin_LIBRARIES} ${Boost_LIBRARIES})
 if (OpenMP_CXX_FOUND)
   target_link_libraries(${${PROJECT_NAME}_LIBRARIES} OpenMP::OpenMP_CXX)
@@ -119,7 +130,7 @@ list(APPEND ${PROJECT_NAME}_TARGETS ${${PROJECT_NAME}_LIBRARIES})
 if(BUILD_ROS_SUPPORT)
   add_executable(planner_ros_node src/ROS/planner_ros_node.cpp )
   add_dependencies(planner_ros_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS} ${${PROJECT_NAME}_LIBRARIES})
-  target_link_libraries(planner_ros_node ${catkin_LIBRARIES} ${${PROJECT_NAME}_LIBRARIES} -lstdc++fs Eigen3::Eigen -lcrypto -lssl)
+  target_link_libraries(planner_ros_node ${catkin_LIBRARIES} ${${PROJECT_NAME}_LIBRARIES} PlanEnv -lstdc++fs Eigen3::Eigen -lcrypto -lssl)
   if(OpenMP_CXX_FOUND)
     target_link_libraries(planner_ros_node OpenMP::OpenMP_CXX)
   endif()

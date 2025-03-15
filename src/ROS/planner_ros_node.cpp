@@ -17,7 +17,9 @@
 #include "utils/geometry_utils.hpp"
 #include "utils/metrics.hpp"
 
-#include "Grid3D/grid3d.hpp"
+// Map
+// #include "Grid3D/grid3d.hpp"
+#include "plan_env/edt_environment.h"
 
 #include <ros/ros.h>
 
@@ -44,50 +46,51 @@ class HeuristicPlannerROS
 public:
     HeuristicPlannerROS()
     {
-
+        
         std::string algorithm_name;
         lnh_.param("algorithm", algorithm_name, (std::string)"astar");
         lnh_.param("heuristic", heuristic_, (std::string)"euclidean");
         
         configureAlgorithm(algorithm_name, heuristic_);
-
-        pointcloud_sub_     = lnh_.subscribe<pcl::PointCloud<pcl::PointXYZ>>("/points", 1, &HeuristicPlannerROS::pointCloudCallback, this);
-        occupancy_grid_sub_ = lnh_.subscribe<nav_msgs::OccupancyGrid>("/grid", 1, &HeuristicPlannerROS::occupancyGridCallback, this);
-
+        
+        // pointcloud_sub_     = lnh_.subscribe<pcl::PointCloud<pcl::PointXYZ>>("/points", 1, &HeuristicPlannerROS::pointCloudCallback, this);
+        // occupancy_grid_sub_ = lnh_.subscribe<nav_msgs::OccupancyGrid>("/grid", 1, &HeuristicPlannerROS::occupancyGridCallback, this);
+        
         request_path_server_   = lnh_.advertiseService("request_path",  &HeuristicPlannerROS::requestPathService, this);
         change_planner_server_ = lnh_.advertiseService("set_algorithm", &HeuristicPlannerROS::setAlgorithm, this);
-
+        
         line_markers_pub_  = lnh_.advertise<visualization_msgs::Marker>("path_line_markers", 1);
         point_markers_pub_ = lnh_.advertise<visualization_msgs::Marker>("path_points_markers", 1);
         global_path_pub_ = lnh_.advertise<nav_msgs::Path>("global_path", 1);
-
+        
     }
+    EDTEnvironment::Ptr edt_environment_;
 
 private:
 
-    void occupancyGridCallback(const nav_msgs::OccupancyGrid::ConstPtr &_grid){
-        ROS_INFO("Loading OccupancyGrid map...");
-        Planners::utils::configureWorldFromOccupancyWithCosts(*_grid, *algorithm_);
-        algorithm_->publishOccupationMarkersMap();
-        occupancy_grid_sub_.shutdown();
-        ROS_INFO("Occupancy Grid Loaded");
-        occupancy_grid_ = *_grid;
-        input_map_ = 1;
-    }
+    // void occupancyGridCallback(const nav_msgs::OccupancyGrid::ConstPtr &_grid){
+    //     ROS_INFO("Loading OccupancyGrid map...");
+    //     Planners::utils::configureWorldFromOccupancyWithCosts(*_grid, *algorithm_);
+    //     algorithm_->publishOccupationMarkersMap();
+    //     occupancy_grid_sub_.shutdown();
+    //     ROS_INFO("Occupancy Grid Loaded");
+    //     occupancy_grid_ = *_grid;
+    //     input_map_ = 1;
+    // }
 
 
-    void pointCloudCallback(const pcl::PointCloud<pcl::PointXYZ>::ConstPtr &_points)
-    {
+    // void pointCloudCallback(const pcl::PointCloud<pcl::PointXYZ>::ConstPtr &_points)
+    // {
 
-        ROS_INFO("Loading map...");
-        Planners::utils::configureWorldFromPointCloud(_points, *algorithm_, resolution_);
-        algorithm_->publishOccupationMarkersMap();
-        Planners::utils::configureWorldCosts(*m_grid3d_, *algorithm_);
-        ROS_INFO("Published occupation marker map");
-        cloud_ = *_points;
-        input_map_ = 2;
-        pointcloud_sub_.shutdown();
-    }   
+    //     ROS_INFO("Loading map...");
+    //     Planners::utils::configureWorldFromPointCloud(_points, *algorithm_, resolution_);
+    //     algorithm_->publishOccupationMarkersMap();
+    //     Planners::utils::configureWorldCosts(*m_grid3d_, *algorithm_);
+    //     ROS_INFO("Published occupation marker map");
+    //     cloud_ = *_points;
+    //     input_map_ = 2;
+    //     pointcloud_sub_.shutdown();
+    // }   
     bool setAlgorithm(heuristic_planners::SetAlgorithmRequest &_req, heuristic_planners::SetAlgorithmResponse &rep){
         
         configureAlgorithm(_req.algorithm.data, _req.heuristic.data);
@@ -111,7 +114,7 @@ private:
         publishMarker(path_line_markers_, line_markers_pub_);
         publishMarker(path_points_markers_, point_markers_pub_);
 
-        //Astar coordinate list is std::vector<vec3i>
+        //Astar coordinate list is std::vector<Eigen::Vector3i>
         const auto discrete_goal =  Planners::utils::discretePoint(_req.goal, resolution_);
         const auto discrete_start = Planners::utils::discretePoint(_req.start, resolution_);
 
@@ -172,8 +175,9 @@ private:
                     const auto [av_angles, angles_sigma, angles_min, angles_max, changes, angles] = Planners::utils::metrics::calculatePathAnglesMetrics(path, 2);
 
                     const auto adjacent_path    = Planners::utils::geometry::getAdjacentPath(path, *algorithm_->getInnerWorld());
-                    const auto result_distances = getClosestObstaclesToPathPoints(adjacent_path);
-                    const auto [mean_dist, dist_stddev, min_dist, max_dist] = Planners::utils::metrics::calculateDistancesMetrics(result_distances );
+                    // TODO(Chanjoon) After converting to EDT map and implement getClosestObstaclesToPathPoints, uncomment this save data part
+                    // const auto result_distances = getClosestObstaclesToPathPoints(adjacent_path);
+                    // const auto [mean_dist, dist_stddev, min_dist, max_dist] = Planners::utils::metrics::calculateDistancesMetrics(result_distances );
 
                     path_data["av_curv"]        = av_curvature;
                     path_data["std_dev_curv"]   = curv_sigma;
@@ -186,26 +190,26 @@ private:
                     path_data["max_angle"]      = angles_max;         
                     path_data["angle_changes"]  = changes;
 
-                    path_data["mean_dist"]      = mean_dist;
-                    path_data["std_dev"]        = dist_stddev;
-                    path_data["min_dist"]       = min_dist;
-                    path_data["max_dist"]       = max_dist;
+                    // path_data["mean_dist"]      = mean_dist;
+                    // path_data["std_dev"]        = dist_stddev;
+                    // path_data["min_dist"]       = min_dist;
+                    // path_data["max_dist"]       = max_dist;
 
                     _rep.n_points.data                   = adjacent_path.size();
-                    _rep.mean_distance_to_obstacle.data  = mean_dist;
-                    _rep.mean_std_dev_to_obstacle.data   = dist_stddev;
-                    _rep.min_distance_to_obstacle.data   = min_dist;
-                    _rep.max_distance_to_obstacle.data   = max_dist;
+                    // _rep.mean_distance_to_obstacle.data  = mean_dist;
+                    // _rep.mean_std_dev_to_obstacle.data   = dist_stddev;
+                    // _rep.min_distance_to_obstacle.data   = min_dist;
+                    // _rep.max_distance_to_obstacle.data   = max_dist;
 
-                    Planners::utils::DataVariantSaver saver;
+                    // Planners::utils::DataVariantSaver saver;
 
-                    if(saver.savePathDataToFile(path_data, data_folder_ + "/planning.txt") && 
-                       saver.savePathDistancesToFile(adjacent_path, result_distances, data_folder_ + "/path_metrics.txt") &&
-                       saver.saveAnglesToFile(angles, data_folder_ + "/angles.txt") ){
-                        ROS_INFO("Path data metrics saved");
-                    }else{
-                        ROS_ERROR("Couldn't save path data metrics. Path and results does not have same size");
-                    }
+                    // if(saver.savePathDataToFile(path_data, data_folder_ + "/planning.txt") && 
+                    //    saver.savePathDistancesToFile(adjacent_path, result_distances, data_folder_ + "/path_metrics.txt") &&
+                    //    saver.saveAnglesToFile(angles, data_folder_ + "/angles.txt") ){
+                    //     ROS_INFO("Path data metrics saved");
+                    // }else{
+                    //     ROS_ERROR("Couldn't save path data metrics. Path and results does not have same size");
+                    // }
                 }
 
                 if(_req.tries.data < 2 || i == ( _req.tries.data - 1) ){
@@ -252,9 +256,9 @@ private:
         lnh_.param("resolution", resolution_, (float)0.2);
         lnh_.param("inflate_map", inflate_, (bool)true);
 
-        world_size_.x = std::floor(ws_x / resolution_);
-        world_size_.y = std::floor(ws_y / resolution_);
-        world_size_.z = std::floor(ws_z / resolution_);
+        world_size_.x() = std::floor(ws_x / resolution_);
+        world_size_.y() = std::floor(ws_y / resolution_);
+        world_size_.z() = std::floor(ws_z / resolution_);
         
         lnh_.param("use3d", use3d_, (bool)true);
 
@@ -309,11 +313,11 @@ private:
             algorithm_.reset(new Planners::AStar(use3d_));
         }
 
-        algorithm_->setWorldSize(world_size_, resolution_);
+        // algorithm_->setWorldSize(world_size_, resolution_);
 
         configureHeuristic(_heuristic);
 
-        ROS_INFO("Using discrete world size: [%d, %d, %d]", world_size_.x, world_size_.y, world_size_.z);
+        ROS_INFO("Using discrete world size: [%.2f, %.2f, %.2f]", world_size_.x(), world_size_.y(), world_size_.z());
         ROS_INFO("Using resolution: [%f]", resolution_);
 
         if(inflate_){
@@ -324,12 +328,19 @@ private:
         }
         algorithm_->setInflationConfig(inflate_, inflation_steps_);
 
-        m_grid3d_.reset(new Grid3d); //TODO Costs not implement yet
-        double cost_scaling_factor, robot_radius;
-        lnh_.param("cost_scaling_factor", cost_scaling_factor, 0.8);		
-		lnh_.param("robot_radius", robot_radius, 0.4);		
+        // m_grid3d_.reset(new Grid3d); //TODO Costs not implement yet
+        // double cost_scaling_factor, robot_radius;
+        // lnh_.param("cost_scaling_factor", cost_scaling_factor, 0.8);		
+		// lnh_.param("robot_radius", robot_radius, 0.4);		
         
-        m_grid3d_->setCostParams(cost_scaling_factor, robot_radius);
+        // m_grid3d_->setCostParams(cost_scaling_factor, robot_radius);
+
+        sdf_map_.reset(new SDFMap);
+        sdf_map_->initMap(lnh_);
+        edt_environment_.reset(new EDTEnvironment);
+        edt_environment_->setMap(sdf_map_);
+
+        algorithm_->setEnvironment(edt_environment_);
         
         std::string frame_id;
         lnh_.param("frame_id", frame_id, std::string("map"));		
@@ -371,21 +382,22 @@ private:
             ROS_WARN("Wrong Heuristic param. Using Euclidean Heuristics by default");
         }
     }
-    std::vector<std::pair<Planners::utils::Vec3i, double>> getClosestObstaclesToPathPoints(const Planners::utils::CoordinateList &_path){
+    //TODO(Chanjoon) Implement this function for EDT map
+    // std::vector<std::pair<Eigen::Vector3i, double>> getClosestObstaclesToPathPoints(const Planners::utils::CoordinateList &_path){
         
-        std::vector<std::pair<Planners::utils::Vec3i, double>> result;
-        if ( use3d_ ){
-            //TODO grid3d distances does not take into account the inflation added internally by the algorithm
+    //     std::vector<std::pair<Eigen::Vector3i, double>> result;
+    //     if ( use3d_ ){
+    //         //TODO grid3d distances does not take into account the inflation added internally by the algorithm
 
-            for(const auto &it: _path)
-                result.push_back( m_grid3d_->getClosestObstacle(it) );
-            }
+    //         for(const auto &it: _path)
+    //             result.push_back( m_grid3d_->getClosestObstacle(it) );
+    //         }
 
-        else{//TODO IMplement for 2d
-            result.push_back(std::make_pair<Planners::utils::Vec3i, double>(Planners::utils::Vec3i{0,0,0}, 0.0));
-        }
-        return result;
-    }
+    //     else{//TODO IMplement for 2d
+    //         result.push_back(std::make_pair<Eigen::Vector3i, double>(Eigen::Vector3i{0,0,0}, 0.0));
+    //     }
+    //     return result;
+    // }
     void configMarkers(const std::string &_ns, const std::string &_frame, const double &_scale){
 
         path_line_markers_.ns = _ns;
@@ -449,9 +461,9 @@ private:
 
         auto random_color = Planners::Misc::HSVtoRGB(hue, 100, 100);
 
-        _color.r = random_color.x;
-        _color.g = random_color.y;
-        _color.b = random_color.z;
+        _color.r = static_cast<int>(random_color.x());
+        _color.g = static_cast<int>(random_color.y());
+        _color.b = static_cast<int>(random_color.z());
     }
 
 
@@ -462,13 +474,14 @@ private:
     ros::Publisher line_markers_pub_, point_markers_pub_, global_path_pub_;
 
     std::unique_ptr<Grid3d> m_grid3d_;
+    SDFMap::Ptr sdf_map_;
 
     std::unique_ptr<Planners::AlgorithmBase> algorithm_;
         
     visualization_msgs::Marker path_line_markers_, path_points_markers_;
     
     //Parameters
-    Planners::utils::Vec3i world_size_; // Discrete
+    Eigen::Vector3d world_size_; // Discrete
     float resolution_;
 
     bool save_data_;

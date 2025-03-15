@@ -114,7 +114,7 @@ namespace Planners
              * @return false 
              */
             bool savePathDistancesToFile(const utils::CoordinateList &_path,
-                                         const std::vector<std::pair<utils::Vec3i, double>> &_results,
+                                         const std::vector<std::pair<Eigen::Vector3i, double>> &_results,
                                          const std::string &_file_path){
                 
                 out_file_data_.open(_file_path, std::ofstream::app);

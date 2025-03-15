@@ -42,7 +42,7 @@ namespace Planners
              * @param _distances_pair 
              * @return DistancesData 
              */
-            DistancesData calculateDistancesMetrics(const std::vector<std::pair<utils::Vec3i, double>> &_distances_pair);
+            DistancesData calculateDistancesMetrics(const std::vector<std::pair<Eigen::Vector3i, double>> &_distances_pair);
 
             /**
              * @brief Get the Average object
