@@ -31,41 +31,7 @@ namespace Planners
 {
     namespace utils
     {
-        /**
-         * @brief Discretize a pcl::PointXYZ into a Eigen::Vector3i object
-         *   
-         * @param _point pcl::PointXYZ object
-         * @param _res resolution
-         * @return Eigen::Vector3i 
-         */
-        Eigen::Vector3i discretePoint(const pcl::PointXYZ &_point, const double &_res);
 
-        /**
-         * @brief 
-         * 
-         * @param _point 
-         * @param _res 
-         * @return Eigen::Vector3i 
-         */
-        Eigen::Vector3i discretePoint(const pcl::PointXYZI &_point, const double &_res);
-
-        /**
-         * @brief Discretize a geometry_msgs::Point into a Eigen::Vector3i object
-         * 
-         * @param _msg geoemtry_msgs::Point object
-         * @param _res resolution
-         * @return Eigen::Vector3i 
-         */
-        Eigen::Vector3i discretePoint(const geometry_msgs::Point &_msg, const double &_res);
-
-        /**
-         * @brief Discretize a geomtry_msgs::Pose object
-         * 
-         * @param _msg geometry_msgs::Pose object
-         * @param _res resolution
-         * @return Eigen::Vector3i 
-         */
-        Eigen::Vector3i discretePose(const geometry_msgs::Pose &_msg, const double &_res);
         /**
          * @brief get a geometry_msgs::Point from a discrete position and resolution
          * 
@@ -75,16 +41,6 @@ namespace Planners
          */
         geometry_msgs::Point continousPoint(const Eigen::Vector3i &_vec, const double &_res);
 
-        /**
-         * @brief 
-         * 
-         * @tparam T 
-         * @param _vec 
-         * @param _res 
-         * @return T 
-         */
-       
-        pcl::PointXYZI continousPointPCLXYZI(const Eigen::Vector3i &_vec, const double &_res);
         /**
          * @brief Helper function for the configureWorldFromOccupancy (Grid) function 
          * Given a index an a grid(matrix) width, returns the associated (x,y,0) 

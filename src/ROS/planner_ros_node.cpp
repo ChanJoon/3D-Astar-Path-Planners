@@ -115,8 +115,12 @@ private:
         publishMarker(path_points_markers_, point_markers_pub_);
 
         //Astar coordinate list is std::vector<Eigen::Vector3i>
-        const auto discrete_goal =  Planners::utils::discretePoint(_req.goal, resolution_);
-        const auto discrete_start = Planners::utils::discretePoint(_req.start, resolution_);
+        const auto discrete_goal = Eigen::Vector3i(static_cast<int>(std::round(_req.goal.x / resolution_)),
+                                                   static_cast<int>(std::round(_req.goal.y / resolution_)),
+                                                   static_cast<int>(std::round(_req.goal.z / resolution_)));
+        const auto discrete_start = Eigen::Vector3i(static_cast<int>(std::round(_req.start.x / resolution_)),
+                                                    static_cast<int>(std::round(_req.start.y / resolution_)),
+                                                    static_cast<int>(std::round(_req.start.z / resolution_)));
 
         if( algorithm_->detectCollision(discrete_start) ){
             std::cout << discrete_start << ": Start not valid" << std::endl;
