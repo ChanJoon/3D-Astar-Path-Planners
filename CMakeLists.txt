@@ -61,7 +61,6 @@ include_directories(
   ${catkin_INCLUDE_DIRS}
   ${PCL_INCLUDE_DIRS}
   ${Eigen3_INCLUDE_DIRS}
-  ${CMAKE_CURRENT_SOURCE_DIR}/include/bonxai
   ${CMAKE_CURRENT_SOURCE_DIR}/include/plan_env
 )
 
@@ -142,4 +141,3 @@ install(DIRECTORY config/ DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}/config
 install(DIRECTORY rviz/ DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}/rviz)
 install(DIRECTORY resources/ 
 DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}/resources  
-PATTERN ".gridm" EXCLUDE)
