@@ -2,20 +2,20 @@
 
 namespace Planners
 {
-    ThetaStarM2::ThetaStarM2(bool _use_3d):ThetaStar(_use_3d, "thetastarm2") {}
+    ThetaStarM2::ThetaStarM2():ThetaStar("thetastarm2") {}
     
-    ThetaStarM2::ThetaStarM2(bool _use_3d, std::string _name = "thetastarm2" ):ThetaStar(_use_3d, _name) {}
+    ThetaStarM2::ThetaStarM2(std::string _name = "thetastarm2" ):ThetaStar(_name) {}
     
     inline void ThetaStarM2::ComputeCost(Node *_s_aux, Node *_s2_aux)
     {
         line_of_sight_checks_++;
-        if (LineOfSight::bresenham3D(_s_aux->parent, _s2_aux, discrete_world_, checked_nodes))  
+        if (LineOfSight::bresenham3D(_s_aux->parent, _s2_aux, edt_environment_, checked_nodes))  
         {
             auto dist2   = geometry::distanceBetween2Nodes(_s_aux->parent, _s2_aux);
             auto edge2   = ComputeEdgeCost(checked_nodes, _s_aux->parent, _s2_aux);
 
             line_of_sight_checks_++;
-            LineOfSight::bresenham3D(_s_aux, _s2_aux, discrete_world_, checked_nodes_current);
+            LineOfSight::bresenham3D(_s_aux, _s2_aux, edt_environment_, checked_nodes_current);
 
             auto dist1   = geometry::distanceBetween2Nodes(_s_aux, _s2_aux);  
             auto edge1   =  ComputeEdgeCost(checked_nodes_current, _s_aux, _s2_aux);
@@ -38,7 +38,7 @@ namespace Planners
             _s2_aux->parent=_s_aux;
 
             line_of_sight_checks_++;
-            LineOfSight::bresenham3D(_s_aux, _s2_aux, discrete_world_, checked_nodes);
+            LineOfSight::bresenham3D(_s_aux, _s2_aux, edt_environment_, checked_nodes);
             
             auto dist1     = geometry::distanceBetween2Nodes(_s_aux, _s2_aux);  
             auto edge1   =  ComputeEdgeCost(checked_nodes, _s_aux, _s2_aux);

@@ -17,7 +17,7 @@
 #include <Eigen/Dense>
 #include "utils/utils.hpp"
 #include "utils/LineOfSight.hpp"
-#include "utils/world.hpp"
+#include "plan_env/edt_environment.h"
 
 
 namespace Planners
@@ -26,136 +26,34 @@ namespace Planners
     {
         namespace geometry
         {
-            /**
-             * @brief Return the integrated distance alongside the _path object with the _resolution given
-             * 
-             * @param _path CoordinateList object of points (discrete)
-             * @param _resolution 
-             * @return float continous path length
-             */
             float calculatePathLength(const CoordinateList &_path, const double &_resolution);
 
-            /**
-             * @brief Get the Adjacent Path object
-             * 
-             * @param _path 
-             * @param _world 
-             * @return utils::CoordinateList 
-             */
-            utils::CoordinateList getAdjacentPath(const utils::CoordinateList &_path, const utils::DiscreteWorld &_world);
-            /**
-             * @brief Discrete distance multiplied by dist_scale_factor_
-             * 
-             * @param _n1 
-             * @param _n2 
-             * @return unsigned int 
-             */
+            utils::CoordinateList getAdjacentPath(const utils::CoordinateList &_path, const EDTEnvironment::Ptr &_edt_env);
+
             unsigned int distanceBetween2Nodes(const Node &_n1, const Node &_n2);
-            /**
-             * @brief  Discrete distance multiplied by dist_scale_factor_
-             * 
-             * @param _n1 
-             * @param _n2 
-             * @return unsigned int 
-             */
+
             unsigned int distanceBetween2Nodes(const Node *_n1, const Node *_n2);
             
-            /**
-             * @brief 
-             * 
-             * @param _v1 
-             * @param _v2 
-             * @return unsigned int 
-             */
             unsigned int distanceBetween2Nodes(const Eigen::Vector3d &_v1, const Eigen::Vector3d &_v2);
-            /**
-             * @brief Discrete distance 
-             * 
-             * @param _n1 
-             * @param _n2 
-             * @return unsigned int 
-             */
+
             unsigned int NodesBetween2Nodes(const Node &_n1, const Node &_n2);
-            /**
-             * @brief  Discrete distance             * 
-             * @param _n1 
-             * @param _n2 
-             * @return unsigned int 
-             */
+
             unsigned int NodesBetween2Nodes(const Node *_n1, const Node *_n2);
             
-            /**
-             * @brief 
-             * 
-             * @param _v1 
-             * @param _v2 
-             * @return unsigned int 
-             */
             unsigned int NodesBetween2Nodes(const Eigen::Vector3d &_v1, const Eigen::Vector3d &_v2);
 
-            /**
-             * @brief Returns the absolute value vector 
-             * 
-             * @param _vec 
-             * @return Eigen::Vector3d
-             */
             Eigen::Vector3d abs(const Eigen::Vector3d &_vec);
 
-            /**
-             * @brief 
-             * 
-             * @param _v1 
-             * @param _v2 
-             * @return int 
-             */
             int dotProduct(const Eigen::Vector3i &_v1, const Eigen::Vector3i &_v2);
 
-            /**
-             * @brief 
-             * 
-             * @param _v 
-             * @return double 
-             */
             double moduleVector(const Eigen::Vector3i &_v);
 
-            /**
-             * @brief 
-             * 
-             * @param _v1 
-             * @param _v2 
-             * @param _v3 
-             * @return double 
-             */
             double angleBetweenThreePoints(const Eigen::Vector3i &_v1, const Eigen::Vector3i &_v2, const Eigen::Vector3i &_v3);
 
-            /**
-             * @brief 
-             * 
-             * @param _v1 
-             * @param _v2 
-             * @param _v3 
-             * @return double 
-             */
             double angleBetweenThreePoints(const Eigen::Vector3d &_v1, const Eigen::Vector3d &_v2, const Eigen::Vector3d &_v3);
 
-            /**
-             * @brief Get the Circunference Radius object
-             * 
-             * @param _v1 
-             * @param _v2 
-             * @param _v3 
-             * @return double 
-             */
             double getCircunferenceRadius(const Eigen::Vector3i &_v1, const Eigen::Vector3i &_v2, const Eigen::Vector3i &_v3);
 
-            /**
-             * @brief Get the Circunference Radius object
-             * 
-             * @param _v1 
-             * @param _v2 
-             * @param _v3 
-             * @return double 
-             */
             double getCircunferenceRadius(const Eigen::Vector3d &_v1, const Eigen::Vector3d &_v2, const Eigen::Vector3d &_v3);
         }//namespace geometry
     }//namespace utils

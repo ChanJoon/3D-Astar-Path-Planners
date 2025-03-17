@@ -47,9 +47,6 @@ public:
         
         configureAlgorithm(algorithm_name, heuristic_);
         
-        // pointcloud_sub_     = lnh_.subscribe<pcl::PointCloud<pcl::PointXYZ>>("/points", 1, &HeuristicPlannerROS::pointCloudCallback, this);
-        // occupancy_grid_sub_ = lnh_.subscribe<nav_msgs::OccupancyGrid>("/grid", 1, &HeuristicPlannerROS::occupancyGridCallback, this);
-        
         request_path_server_   = lnh_.advertiseService("request_path",  &HeuristicPlannerROS::requestPathService, this);
         change_planner_server_ = lnh_.advertiseService("set_algorithm", &HeuristicPlannerROS::setAlgorithm, this);
         
@@ -62,29 +59,6 @@ public:
 
 private:
 
-    // void occupancyGridCallback(const nav_msgs::OccupancyGrid::ConstPtr &_grid){
-    //     ROS_INFO("Loading OccupancyGrid map...");
-    //     Planners::utils::configureWorldFromOccupancyWithCosts(*_grid, *algorithm_);
-    //     algorithm_->publishOccupationMarkersMap();
-    //     occupancy_grid_sub_.shutdown();
-    //     ROS_INFO("Occupancy Grid Loaded");
-    //     occupancy_grid_ = *_grid;
-    //     input_map_ = 1;
-    // }
-
-
-    // void pointCloudCallback(const pcl::PointCloud<pcl::PointXYZ>::ConstPtr &_points)
-    // {
-
-    //     ROS_INFO("Loading map...");
-    //     Planners::utils::configureWorldFromPointCloud(_points, *algorithm_, resolution_);
-    //     algorithm_->publishOccupationMarkersMap();
-    //     Planners::utils::configureWorldCosts(*m_grid3d_, *algorithm_);
-    //     ROS_INFO("Published occupation marker map");
-    //     cloud_ = *_points;
-    //     input_map_ = 2;
-    //     pointcloud_sub_.shutdown();
-    // }   
     bool setAlgorithm(heuristic_planners::SetAlgorithmRequest &_req, heuristic_planners::SetAlgorithmResponse &rep){
         
         configureAlgorithm(_req.algorithm.data, _req.heuristic.data);
@@ -232,45 +206,30 @@ private:
         world_size_.y() = std::floor(ws_y / resolution_);
         world_size_.z() = std::floor(ws_z / resolution_);
         
-        lnh_.param("use3d", use3d_, (bool)true);
-
-        // ThetaStarAGR-specific parameters
-        float ground_height_threshold = 5.0f;
-        int ground_to_air_transition_cost = 0;
-        float air_movement_factor = 2;
-        int flying_cost = 10;
-
-        if (algorithm_name == "thetastaragr") {
-            lnh_.param("ground_height_threshold", ground_height_threshold, (float)5.0);
-            lnh_.param("ground_to_air_transition_cost", ground_to_air_transition_cost, (int)0);
-            lnh_.param("air_movement_factor", air_movement_factor, (float)2.0);
-            lnh_.param("flying_cost", flying_cost, (int)10);
-        }
-
         if( algorithm_name == "astar" ){
             ROS_INFO("Using A*");
-            algorithm_.reset(new Planners::AStar(use3d_));
+            algorithm_.reset(new Planners::AStar());
         }else if( algorithm_name == "costastar" ){
             ROS_INFO("Using Cost Aware A*");
-            algorithm_.reset(new Planners::AStarM1(use3d_));
+            algorithm_.reset(new Planners::AStarM1());
         }else if( algorithm_name == "astarsafetycost" ){
             ROS_INFO("Using A* Safety Cost");
-            algorithm_.reset(new Planners::AStarM2(use3d_));    
+            algorithm_.reset(new Planners::AStarM2());    
         }else if ( algorithm_name == "thetastar" ){
             ROS_INFO("Using Theta*");
-            algorithm_.reset(new Planners::ThetaStar(use3d_));
+            algorithm_.reset(new Planners::ThetaStar());
         }else if ( algorithm_name == "costhetastar" ){
             ROS_INFO("Using Cost Aware Theta* ");
-            algorithm_.reset(new Planners::ThetaStarM1(use3d_));
+            algorithm_.reset(new Planners::ThetaStarM1());
         }else if ( algorithm_name == "thetastarsafetycost" ){
             ROS_INFO("Using Theta* Safety Cost");
-            algorithm_.reset(new Planners::ThetaStarM2(use3d_));
+            algorithm_.reset(new Planners::ThetaStarM2());
         }else if ( algorithm_name == "thetastaragr" ){
             ROS_INFO("Using Air-Ground Robot Aware Theta*");
-            algorithm_.reset(new Planners::ThetaStarAGR(use3d_, ground_height_threshold, ground_to_air_transition_cost, air_movement_factor, flying_cost));
+            algorithm_.reset(new Planners::ThetaStarAGR());
         }else{
             ROS_WARN("Wrong algorithm name parameter. Using ASTAR by default");
-            algorithm_.reset(new Planners::AStar(use3d_));
+            algorithm_.reset(new Planners::AStar());
         }
 
         configureHeuristic(_heuristic);
@@ -286,13 +245,6 @@ private:
         }
         algorithm_->setInflationConfig(inflate_, inflation_steps_);
 
-        // m_grid3d_.reset(new Grid3d); //TODO Costs not implement yet
-        // double cost_scaling_factor, robot_radius;
-        // lnh_.param("cost_scaling_factor", cost_scaling_factor, 0.8);		
-		// lnh_.param("robot_radius", robot_radius, 0.4);		
-        
-        // m_grid3d_->setCostParams(cost_scaling_factor, robot_radius);
-
         sdf_map_.reset(new SDFMap);
         sdf_map_->initMap(lnh_);
         edt_environment_.reset(new EDTEnvironment);
@@ -305,10 +257,8 @@ private:
         configMarkers(algorithm_name, frame_id, 0.3);
 
         //Algorithm specific parameters. Its important to set line of sight after configuring world size(it depends on the resolution)
-        float sight_dist, cost_weight;
-        lnh_.param("max_line_of_sight_distance", sight_dist, (float)1000.0); // In meters
+        float cost_weight;
         lnh_.param("cost_weight", cost_weight, (float)0.0);
-        algorithm_->setMaxLineOfSight(sight_dist);
         algorithm_->setCostFactor(cost_weight);
 
         lnh_.param("overlay_markers", overlay_markers_, (bool)false);
@@ -420,8 +370,6 @@ private:
     //Parameters
     Eigen::Vector3d world_size_; // Discrete
     float resolution_;
-
-    bool use3d_{true};
 
     bool inflate_{false};
     unsigned int inflation_steps_{0};

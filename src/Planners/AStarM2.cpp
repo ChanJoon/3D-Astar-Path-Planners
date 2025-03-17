@@ -2,8 +2,8 @@
 
 namespace Planners{
     
-AStarM2::AStarM2(bool _use_3d):AStar(_use_3d, "astarm2") {}
-AStarM2::AStarM2(bool _use_3d, std::string _name = "astarm2" ):AStar(_use_3d, _name) {}
+AStarM2::AStarM2():AStar("astarm2") {}
+AStarM2::AStarM2(std::string _name = "astarm2" ):AStar(_name) {}
 
 
 inline unsigned int AStarM2::computeG(const Node* _current, Node* _suc, unsigned int _n_i, unsigned int _dirs){

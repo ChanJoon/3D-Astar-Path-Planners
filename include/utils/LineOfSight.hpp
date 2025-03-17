@@ -12,8 +12,8 @@
  * 
  */
 #include "utils/utils.hpp"
-#include "utils/world.hpp"
 #include "utils/geometry_utils.hpp"
+#include "plan_env/edt_environment.h"
 
 namespace Planners
 {
@@ -21,17 +21,7 @@ namespace Planners
     {
         namespace LineOfSight
         {
-            /**
-             * @brief 
-             * 
-             * @param _lnode 
-             * @param _rnode 
-             * @param _world 
-             * @param _visited_nodes 
-             * @return true 
-             * @return false 
-             */
-            bool bresenham3D(const Eigen::Vector3d _lnode, const Eigen::Vector3d _rnode, const DiscreteWorld &_world, CoordinateListPtr _visited_nodes);
+            bool bresenham3D(const Eigen::Vector3d _lnode, const Eigen::Vector3d _rnode, const EDTEnvironment::Ptr &_edt_env, CoordinateListPtr _visited_nodes);
 
             /**
              * @brief Implementation of bressenham 3D line of sight algorithm
@@ -45,31 +35,11 @@ namespace Planners
              * @return true If there exists line of sight between both nodes
              * @return false If there is no line of sight between both nodes
              */
-            bool bresenham3D(const Node *_lnode, const Node *_rnode, const DiscreteWorld &_world, CoordinateListPtr _visited_nodes = nullptr);
+            bool bresenham3D(const Node *_lnode, const Node *_rnode, const EDTEnvironment::Ptr &_edt_env, CoordinateListPtr _visited_nodes = nullptr);
 
-
-            /**
-             * @brief 
-             * 
-             * @param _lnode 
-             * @param _rnode 
-             * @param _world 
-             * @param _threshold 
-             * @return true 
-             * @return false 
-             */
-            bool bresenham3DWithMaxThreshold(const Node *_lnode, const Node *_rnode, const DiscreteWorld &_world, const unsigned int _threshold);
+            bool bresenham3DWithMaxThreshold(const Node *_lnode, const Node *_rnode, const EDTEnvironment::Ptr &_edt_env, const unsigned int _threshold);
         
-            /**
-             * @brief 
-             * 
-             * @param _lnode 
-             * @param _rnode 
-             * @param _world 
-             * @param _threshold 
-             * @return int 
-             */
-            int nodesInLineBetweenTwoNodes(const Node *_lnode, const Node *_rnode, const DiscreteWorld &_world, const unsigned int _threshold);
+            int nodesInLineBetweenTwoNodes(const Node *_lnode, const Node *_rnode, const EDTEnvironment::Ptr &_edt_env, const unsigned int _threshold);
         }
     }
 }

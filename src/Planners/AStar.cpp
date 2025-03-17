@@ -1,15 +1,25 @@
 #include "Planners/AStar.hpp"
 
 namespace Planners{
-    
-AStar::AStar(bool _use_3d = true, std::string _name = "astar" ): AlgorithmBase(_use_3d, _name){
+AStar::AStar(std::string _name = "astar"): AlgorithmBase(_name){
+    setParam();
     configAlgorithm();
 }
     
-AStar::AStar(bool _use_3d = true): AlgorithmBase(_use_3d, "astar")
+AStar::AStar(): AlgorithmBase("astar")
 {
+    setParam();
     configAlgorithm();
 }
+
+void AStar::setParam() {
+    lnh_.param("astar/resolution", resolution_, -1.0);
+    lnh_.param("astar/time_resolution", time_resolution_, -1.0);
+    lnh_.param("astar/lambda_heuristic", lambda_heuristic_, -1.0);
+    lnh_.param("astar/allocate_num", allocate_num_, -1);
+    tie_breaker_ = 1.0 + 1.0 / 10000;
+}
+
 void AStar::configAlgorithm(){
 
     closedSet_.reserve(50000);
@@ -23,8 +33,7 @@ void AStar::configAlgorithm(){
 	occupancy_marker_pub_ = lnh_.advertise<pcl::PointCloud<pcl::PointXYZ>>("occupancy_markers", 1, true);
 
     std::string frame_id;
-    lnh_.param("frame_id", frame_id, std::string("map"));	
-    lnh_.param("resolution", resolution_, (float)0.2);
+    lnh_.param("frame_id", frame_id, std::string("map"));
 	occupancy_marker_.header.frame_id = frame_id; // "world";
 
     explored_node_marker_.header.frame_id = frame_id; //"world";
@@ -67,21 +76,6 @@ void AStar::configAlgorithm(){
 	aux_text_marker_.scale.z = 3.0 * resolution_;
     last_publish_tamp_ = ros::Time::now();
 
-}
-void AStar::publishOccupationMarkersMap()
-{
-	occupancy_marker_.clear();
-    for(const auto &it: discrete_world_.getElements()){
-        if(!it.occupied) continue;
-        pcl::PointXYZ point;
-
-		point.x = it.coordinates.x() * resolution_;
-		point.y = it.coordinates.y() * resolution_;
-		point.z = it.coordinates.z() * resolution_;
-		occupancy_marker_.push_back(point);
-    }
-
-	occupancy_marker_pub_.publish(occupancy_marker_);
 }
 
 inline unsigned int AStar::computeG(const Node* _current, Node* _suc,  unsigned int _n_i, unsigned int _dirs){

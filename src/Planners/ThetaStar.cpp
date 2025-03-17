@@ -2,9 +2,9 @@
 
 namespace Planners
 {
-    ThetaStar::ThetaStar(bool _use_3d):AStar(_use_3d, "thetastar") {}
+    ThetaStar::ThetaStar():AStar("thetastar") {}
     
-    ThetaStar::ThetaStar(bool _use_3d, std::string _name = "thetastar" ):AStar(_use_3d, _name) {
+    ThetaStar::ThetaStar(std::string _name = "thetastar" ):AStar(_name) {
         checked_nodes.reset(new CoordinateList);
         checked_nodes_current.reset(new CoordinateList);
 
@@ -34,7 +34,7 @@ namespace Planners
     {
         auto distanceParent2 = geometry::distanceBetween2Nodes(_s_aux->parent, _s2_aux);
         line_of_sight_checks_++;
-        if ( LineOfSight::bresenham3D(_s_aux->parent, _s2_aux, discrete_world_) )
+        if ( LineOfSight::bresenham3D(_s_aux->parent, _s2_aux, edt_environment_) )
         {
             if ( ( _s_aux->parent->G + distanceParent2 ) < _s2_aux->G )
             {
@@ -64,8 +64,7 @@ namespace Planners
 
             if ( successor == nullptr || 
                  successor->isInClosedList || 
-                 successor->occupied ||
-                 successor->coordinates.z() < 5) 
+                 successor->occupied )
                 continue;
     
             if (! successor->isInOpenList ) { 

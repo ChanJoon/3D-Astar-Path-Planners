@@ -32,7 +32,6 @@ namespace Planners
     namespace utils
     {
         class Node;
-        struct NodeComparator;
 
         using CoordinateList     = std::vector<Eigen::Vector3d>;
         using CoordinateListPtr  = std::shared_ptr<std::vector<Eigen::Vector3d>>;

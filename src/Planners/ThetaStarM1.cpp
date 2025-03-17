@@ -2,15 +2,15 @@
 
 namespace Planners
 {
-    ThetaStarM1::ThetaStarM1(bool _use_3d):ThetaStar(_use_3d, "thetastarm1") {}
-    ThetaStarM1::ThetaStarM1(bool _use_3d, std::string _name = "thetastarm1" ):ThetaStar(_use_3d, _name) {}
+    ThetaStarM1::ThetaStarM1():ThetaStar("thetastarm1") {}
+    ThetaStarM1::ThetaStarM1(std::string _name = "thetastarm1" ):ThetaStar(_name) {}
 
     inline void ThetaStarM1::ComputeCost(Node *_s_aux, Node *_s2_aux)
     {
         auto distanceParent2 = geometry::distanceBetween2Nodes(_s_aux->parent, _s2_aux);
 
         line_of_sight_checks_++;
-        if (LineOfSight::bresenham3D((_s_aux->parent), _s2_aux, discrete_world_, checked_nodes))
+        if (LineOfSight::bresenham3D((_s_aux->parent), _s2_aux, edt_environment_, checked_nodes))
         {
             auto n_checked_nodes = checked_nodes->size();
             if (n_checked_nodes==0)

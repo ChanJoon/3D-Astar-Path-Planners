@@ -50,7 +50,7 @@ namespace Planners
             {
                 return { std::abs(_vec.x()), std::abs(_vec.y()), std::abs(_vec.z()) };
             }
-            utils::CoordinateList getAdjacentPath(const utils::CoordinateList &_path, const utils::DiscreteWorld &_world){
+            utils::CoordinateList getAdjacentPath(const utils::CoordinateList &_path, const EDTEnvironment::Ptr &_edt_env){
         
                 if( _path.size() == 0)
                     return {};
@@ -62,7 +62,7 @@ namespace Planners
                 visited_nodes.reset(new CoordinateList);
 
                 for(size_t i = 0; i < _path.size() -1 ; ++i){
-                    utils::LineOfSight::bresenham3D(_path[i], _path[i+1], _world, visited_nodes);
+                    utils::LineOfSight::bresenham3D(_path[i], _path[i+1], _edt_env, visited_nodes);
 
                 if(visited_nodes->size() > 0){
                     for(auto &it: *visited_nodes)
@@ -75,19 +75,6 @@ namespace Planners
                     visited_nodes.reset(new utils::CoordinateList);
                 }
 
-                // std::cout << "NODOS OFFLINE:" << adjacent_path.size() << std::endl;  
-
-                // for(size_t i = 0; i < _path.size() ; ++i){
-                //     std::cout << "PATH X:" << _path[i].x << std::endl; 
-                //     std::cout << "PATH Y:" << _path[i].y << std::endl; 
-                //     std::cout << "PATH Z:" << _path[i].z << std::endl; 
-                // }
-
-                // for(size_t i = 0; i < adjacent_path.size() ; ++i){
-                //     std::cout << "PATH X:" << adjacent_path[i].x << std::endl; 
-                //     std::cout << "PATH Y:" << adjacent_path[i].y << std::endl; 
-                //     std::cout << "PATH Z:" << adjacent_path[i].z << std::endl; 
-                // }
                 return adjacent_path;
             }
 

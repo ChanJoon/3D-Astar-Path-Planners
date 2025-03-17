@@ -4,55 +4,12 @@
 namespace Planners
 {
 
-    AlgorithmBase::AlgorithmBase(bool _use_3d = true, const std::string &_algorithm_name = "generic_3d_algorithm"): algorithm_name_(_algorithm_name){
+    AlgorithmBase::AlgorithmBase(const std::string &_algorithm_name = "generic_3d_algorithm"): algorithm_name_(_algorithm_name){
         setHeuristic(&Heuristic::euclidean);
-        CoordinateList directions2d, directions3d;
-        directions2d = {
-            { 0, 1, 0 }, {0, -1, 0}, { 1, 0, 0 }, { -1, 0, 0 }, //4 straight elements
-            { 1, -1, 0 }, { -1, 1, 0 }, { -1, -1, 0 }, { 1, 1, 0 } //4 diagonal elements
-        };
-        directions3d = {
-
-            { 0, 1, 0 }, {0, -1, 0}, { 1, 0, 0 }, { -1, 0, 0 }, { 0, 0, 1}, { 0, 0, -1}, //6 first elements
-
-            { 1, -1, 0 }, { -1, 1, 0 }, { -1, -1, 0 }, { 1, 1, 0 },  { -1, 0, -1 }, //7-18 inclusive
-            { 1, 0, 1 }, { 1, 0, -1 }, {-1, 0, 1}, { 0, -1, 1 }, { 0, 1, 1 }, { 0, 1, -1 },  { 0, -1, -1 }, 
-
-            { -1, -1, 1 }, { 1, 1, 1 },  { -1, 1, 1 }, { 1, -1, 1 }, { -1, -1, -1 }, { 1, 1, -1 }, { -1, 1, -1 }, { 1, -1, -1 }, 
-        };
-        if(_use_3d){
-            std::cout << "[Algorithm] Using 3D Directions" << std::endl;
-            direction = directions3d;
-        }else{
-            std::cout << "[Algorithm] Using 2D Directions" << std::endl;
-            direction = directions2d;
-        }
     }
-    void AlgorithmBase::setEnvironment(EDTEnvironment::Ptr &env){
+    void AlgorithmBase::setEnvironment(const EDTEnvironment::Ptr &env){
         edt_environment_ = env;
     }
-
-    //////////////////////////////////////////////////////////////////////////////////
-    //TODO(Chanjoon) Below four functions should be removed in the future 
-    Eigen::Vector3i AlgorithmBase::getWorldSize(){
-        Eigen::Vector3d size;
-        Eigen::Vector3d origin;
-        edt_environment_->sdf_map_->getRegion(origin, size);
-        
-        double resolution = edt_environment_->sdf_map_->getResolution();
-        return Eigen::Vector3i(
-            static_cast<int>(std::round(size.x() / resolution)),
-            static_cast<int>(std::round(size.y() / resolution)),
-            static_cast<int>(std::round(size.z() / resolution))
-        );
-    }
-    double AlgorithmBase::getWorldResolution(){
-        return edt_environment_->sdf_map_->getResolution();
-    }
-    utils::DiscreteWorld* AlgorithmBase::getInnerWorld(){
-        return &discrete_world_;
-    }
-    //////////////////////////////////////////////////////////////////////////////////
 
     void AlgorithmBase::setHeuristic(HeuristicFunction heuristic_)
     {
@@ -98,7 +55,7 @@ namespace Planners
         unsigned int total_grid_cost1{0};
         unsigned int total_grid_cost2{0};
 
-        auto adjacent_path = utils::geometry::getAdjacentPath(path, discrete_world_);
+        auto adjacent_path = utils::geometry::getAdjacentPath(path, edt_environment_);
         
         for(size_t i = 0; i < adjacent_path.size() - 1; ++i){
             auto node_current = discrete_world_.getNodePtr(adjacent_path[i]);
@@ -121,7 +78,7 @@ namespace Planners
         
         total_cost1 = total_G1 + total_grid_cost1; 
         total_cost2 = total_G2 + total_grid_cost2; 
-        
+
         result_data["algorithm"]               = algorithm_name_;
         result_data["path"]                    = path;
         result_data["time_spent"]              = _timer.getElapsedMicroSeconds();
@@ -139,7 +96,6 @@ namespace Planners
         result_data["grid_cost2"]               = total_grid_cost2;
 
         result_data["line_of_sight_checks"]    = _sight_checks;
-        result_data["max_line_of_sight_cells"] = max_line_of_sight_cells_;
         result_data["cost_weight"]             = cost_weight_;
     
         return result_data;

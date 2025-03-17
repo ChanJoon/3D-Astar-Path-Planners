@@ -6,11 +6,11 @@ namespace Planners
     {
         namespace LineOfSight
         {
-            bool bresenham3D(const Node *_lnode, const Node *_rnode, const DiscreteWorld &_world, CoordinateListPtr _visited_nodes)
+            bool bresenham3D(const Node *_lnode, const Node *_rnode, const EDTEnvironment::Ptr &_edt_env, CoordinateListPtr _visited_nodes)
             {
-                return bresenham3D(_lnode->coordinates, _rnode->coordinates, _world, _visited_nodes);
+                return bresenham3D(_lnode->coordinates, _rnode->coordinates, _edt_env, _visited_nodes);
             }
-            bool bresenham3D(const Eigen::Vector3d _lnode, const Eigen::Vector3d _rnode, const DiscreteWorld &_world, CoordinateListPtr _visited_nodes)
+            bool bresenham3D(const Eigen::Vector3d _lnode, const Eigen::Vector3d _rnode, const EDTEnvironment::Ptr &_edt_env, CoordinateListPtr _visited_nodes)
             {
                 if( geometry::distanceBetween2Nodes(_lnode, _rnode) <= dd_3D_ )
                     return true;
@@ -48,7 +48,7 @@ namespace Planners
                         d1 += 2 * vecDiff.y();
                         d2 += 2 * vecDiff.z();
                         //Check if visitor is occupied and add visitor
-                        if (_world.isOccupied(vec0))
+                        if (_edt_env->sdf_map_->getInflateOccupancy(vec0) == 1)
                             return false;
                         if ( _visited_nodes != nullptr )
                             _visited_nodes->push_back(vec0);
@@ -76,7 +76,7 @@ namespace Planners
                         d1 += 2 * vecDiff.x();
                         d2 += 2 * vecDiff.z();
                         //Check if visitor is occupied and add visitor
-                        if (_world.isOccupied(vec0))
+                        if (_edt_env->sdf_map_->getInflateOccupancy(vec0) == 1)
                             return false;
                         if ( _visited_nodes != nullptr )
                           _visited_nodes->push_back(vec0);
@@ -103,7 +103,7 @@ namespace Planners
                         d1 += 2 * vecDiff.y();
                         d2 += 2 * vecDiff.x();
                         //Check if visitor is occupied and add visitor
-                        if (_world.isOccupied(vec0))
+                        if (_edt_env->sdf_map_->getInflateOccupancy(vec0) == 1)
                             return false;
                         if ( _visited_nodes != nullptr )
                             _visited_nodes->push_back(vec0);
@@ -112,21 +112,21 @@ namespace Planners
 
                 return true;
             }
-            bool bresenham3DWithMaxThreshold(const Node *_lnode, const Node *_rnode, const DiscreteWorld &_world, const unsigned int _threshold){
+            bool bresenham3DWithMaxThreshold(const Node *_lnode, const Node *_rnode, const EDTEnvironment::Ptr &_edt_env, const unsigned int _threshold){
                 
                 if( utils::geometry::distanceBetween2Nodes(_lnode, _rnode) >= ( dist_scale_factor_ * _threshold ) ) //100 is because of the internal distance units
                     return false;
                 
-                return bresenham3D(_lnode, _rnode, _world);
+                return bresenham3D(_lnode, _rnode, _edt_env);
             }
-            int nodesInLineBetweenTwoNodes(const Node *_lnode, const Node *_rnode, const DiscreteWorld &_world, const unsigned int _threshold){
+            int nodesInLineBetweenTwoNodes(const Node *_lnode, const Node *_rnode, const EDTEnvironment::Ptr &_edt_env, const unsigned int _threshold){
                 if( utils::geometry::distanceBetween2Nodes(_lnode, _rnode) >= ( dist_scale_factor_ * _threshold ) ){
                     return 0;
                 }
                 utils::CoordinateListPtr nodes;
                 nodes.reset(new CoordinateList);
 
-                if(bresenham3D(_lnode, _rnode, _world, nodes)){
+                if(bresenham3D(_lnode, _rnode, _edt_env, nodes)){
                     return nodes->size();
                 }else{
                     return 0;

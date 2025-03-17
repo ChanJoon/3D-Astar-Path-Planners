@@ -2,28 +2,29 @@
 
 namespace Planners
 {
-    ThetaStarAGR::ThetaStarAGR(bool _use_3d, float _ground_height_threshold, unsigned int _ground_to_air_transition_cost, float _air_movement_factor, unsigned int _flying_cost) 
-        : ThetaStar(_use_3d, "thetastaragr"), 
-        ground_height_threshold_(_ground_height_threshold), 
-        ground_to_air_transition_cost_(_ground_to_air_transition_cost), 
-        air_movement_factor_(_air_movement_factor),
-        flying_cost_(_flying_cost)
-        {}
+    ThetaStarAGR::ThetaStarAGR() : ThetaStar("thetastaragr")
+    {
+        setParam();
+    }
         
-        ThetaStarAGR::ThetaStarAGR(bool _use_3d, std::string _name, float _ground_height_threshold, unsigned int _ground_to_air_transition_cost, float _air_movement_factor, unsigned int _flying_cost) 
-        : ThetaStar(_use_3d, _name), 
-        ground_height_threshold_(_ground_height_threshold), 
-        ground_to_air_transition_cost_(_ground_to_air_transition_cost), 
-        air_movement_factor_(_air_movement_factor),
-        flying_cost_(_flying_cost)
-    {}
+    ThetaStarAGR::ThetaStarAGR(std::string _name) : ThetaStar(_name)
+    {
+        setParam();
+    }
+
+    void ThetaStarAGR::setParam() {
+        lnh_.param("thetastaragr/ground_height_threshold", ground_height_threshold_, 5.0);
+        lnh_.param("thetastaragr/ground_to_air_transition_cost", ground_to_air_transition_cost_, 0);
+        lnh_.param("thetastaragr/air_movement_factor", air_movement_factor_, 2.0);
+        lnh_.param("thetastaragr/flying_cost", flying_cost_, 10);
+    }
 
     inline void ThetaStarAGR::ComputeCost(Node* _s_aux, Node* _s2_aux)
     {
         auto distanceParent2 = geometry::distanceBetween2Nodes(_s_aux->parent, _s2_aux);
         line_of_sight_checks_++;
 
-        if (LineOfSight::bresenham3D(_s_aux->parent, _s2_aux, discrete_world_))
+        if (LineOfSight::bresenham3D(_s_aux->parent, _s2_aux, edt_environment_))
         {
             // Determine ground/air modes based on z-coordinate
             bool parent_is_ground = (_s_aux->parent->coordinates.z() < ground_height_threshold_);
@@ -114,5 +115,32 @@ namespace Planners
         _suc->C = transition_cost; // Store transition cost separately if needed
         
         return cost;
+    }
+
+    void ThetaStarAGR::exploreNeighbours(Node* _current, const Eigen::Vector3d &_target,node_by_position &_index_by_pos){
+
+        for (unsigned int i = 0; i < direction.size(); ++i) {
+
+            Eigen::Vector3d newCoordinates = _current->coordinates + direction[i];
+            Node *successor = discrete_world_.getNodePtr(newCoordinates);
+
+            if ( successor == nullptr || 
+                 successor->isInClosedList || 
+                 successor->occupied ||
+                 successor->coordinates.z() < 5) 
+                continue;
+    
+            if (! successor->isInOpenList ) { 
+
+                successor->parent = _current;
+                successor->G = computeG(_current, successor, i, direction.size());
+                successor->H = heuristic(successor->coordinates, _target);
+                successor->gplush = successor->G + successor->H;
+                successor->isInOpenList = true;
+                _index_by_pos.insert(successor);
+            }
+         
+            UpdateVertex(_current, successor, _index_by_pos); 
+        }
     }
 }
