@@ -7,7 +7,6 @@
 #include "Planners/ThetaStarM1.hpp"
 #include "Planners/ThetaStarM2.hpp"
 #include "Planners/ThetaStarAGR.hpp"
-#include "utils/SaveDataVariantToFile.hpp"
 #include "utils/misc.hpp"
 #include "utils/geometry_utils.hpp"
 #include "utils/metrics.hpp"
@@ -179,50 +178,6 @@ private:
                     std::cerr << "Bad variant error: " << ex.what() << std::endl;
                 }
 
-                if(save_data_){
-                
-                    const auto [av_curvature, curv_sigma, curv_min, curv_max] = Planners::utils::metrics::calculatePathCurvature(path);
-
-                    const auto [av_angles, angles_sigma, angles_min, angles_max, changes, angles] = Planners::utils::metrics::calculatePathAnglesMetrics(path, 2);
-
-                    const auto adjacent_path    = Planners::utils::geometry::getAdjacentPath(path, *algorithm_->getInnerWorld());
-                    // TODO(Chanjoon) After converting to EDT map and implement getClosestObstaclesToPathPoints, uncomment this save data part
-                    // const auto result_distances = getClosestObstaclesToPathPoints(adjacent_path);
-                    // const auto [mean_dist, dist_stddev, min_dist, max_dist] = Planners::utils::metrics::calculateDistancesMetrics(result_distances );
-
-                    path_data["av_curv"]        = av_curvature;
-                    path_data["std_dev_curv"]   = curv_sigma;
-                    path_data["min_curv"]       = curv_min;
-                    path_data["max_curv"]       = curv_max;
-
-                    path_data["av_angles"]      = av_angles;
-                    path_data["std_dev_angles"] = angles_sigma;
-                    path_data["min_angle"]      = angles_min;
-                    path_data["max_angle"]      = angles_max;         
-                    path_data["angle_changes"]  = changes;
-
-                    // path_data["mean_dist"]      = mean_dist;
-                    // path_data["std_dev"]        = dist_stddev;
-                    // path_data["min_dist"]       = min_dist;
-                    // path_data["max_dist"]       = max_dist;
-
-                    _rep.n_points.data                   = adjacent_path.size();
-                    // _rep.mean_distance_to_obstacle.data  = mean_dist;
-                    // _rep.mean_std_dev_to_obstacle.data   = dist_stddev;
-                    // _rep.min_distance_to_obstacle.data   = min_dist;
-                    // _rep.max_distance_to_obstacle.data   = max_dist;
-
-                    // Planners::utils::DataVariantSaver saver;
-
-                    // if(saver.savePathDataToFile(path_data, data_folder_ + "/planning.txt") && 
-                    //    saver.savePathDistancesToFile(adjacent_path, result_distances, data_folder_ + "/path_metrics.txt") &&
-                    //    saver.saveAnglesToFile(angles, data_folder_ + "/angles.txt") ){
-                    //     ROS_INFO("Path data metrics saved");
-                    // }else{
-                    //     ROS_ERROR("Couldn't save path data metrics. Path and results does not have same size");
-                    // }
-                }
-
                 if(_req.tries.data < 2 || i == ( _req.tries.data - 1) ){
 
                     for(const auto &it: std::get<std::vector<Eigen::Vector3d>>(path_data["path"])){
@@ -342,11 +297,6 @@ private:
         std::string frame_id;
         lnh_.param("frame_id", frame_id, std::string("map"));		
         configMarkers(algorithm_name, frame_id, 0.3);
-
-        lnh_.param("save_data_file", save_data_, (bool)true);		
-        lnh_.param("data_folder", data_folder_, std::string("planing_data.txt"));		
-        if(save_data_)
-            ROS_INFO_STREAM("Saving path planning data results to " << data_folder_);
 
         //Algorithm specific parameters. Its important to set line of sight after configuring world size(it depends on the resolution)
         float sight_dist, cost_weight;
@@ -481,7 +431,6 @@ private:
     Eigen::Vector3d world_size_; // Discrete
     float resolution_;
 
-    bool save_data_;
     bool use3d_{true};
 
     bool inflate_{false};

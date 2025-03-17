@@ -17,10 +17,8 @@
     <!-- Possibles values are: euclidean, euclidean_optimized, manhattan, octogonal and dijkstra -->
     <arg name="heuristic"         default="euclidean"/>
 
-    <arg name="save_data"           default="false"/>
     <arg name="use_marsim"          default="false"/>
     <!-- This should be a folder -->
-    <arg name="data_folder"         default="$(env HOME)"/>
 
     <arg name="overlay_markers"     default="false"/>
     
@@ -44,9 +42,7 @@
         <param name="inflate_map"           value="$(arg inflate_map)"/>
         <param name="inflation_size"        value="$(arg inflation_size)"/>
         
-        <param name="save_data_file"        value="$(arg save_data)"/>
         <param name="overlay_markers"       value="$(arg overlay_markers)"/>
-        <param name="data_folder"           value="$(arg data_folder)"/>
         <param name="algorithm"             value="$(arg algorithm_name)"/>
         <param name="cost_weight"           value="$(arg cost_weight)"/>
         <param name="max_line_of_sight_distance"   value="$(arg max_line_of_sight_distance)"/>

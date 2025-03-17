@@ -4,16 +4,11 @@ project(heuristic_planners)
 add_compile_options(-std=c++17 -Wall -Wextra -pedantic)
 
 option(OPTIMIZE_FLAG        "Enable Compiler Optimization for Runtime Performance" ON)
-option(BUILD_COMPUTE_STATS  "Build Algorithms with statistics" ON)
 
 if(OPTIMIZE_FLAG)
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O2")
 else()
   add_compile_options(-fsanitize=address,undefined -static-libasan -g3)
-endif()
-
-if(BUILD_COMPUTE_STATS)
-  add_compile_definitions(COMPUTE_STATISTICS)
 endif()
 
 find_package(Boost)

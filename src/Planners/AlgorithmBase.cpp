@@ -98,8 +98,6 @@ namespace Planners
         unsigned int total_grid_cost1{0};
         unsigned int total_grid_cost2{0};
 
-#ifdef COMPUTE_STATISTICS
-        
         auto adjacent_path = utils::geometry::getAdjacentPath(path, discrete_world_);
         
         for(size_t i = 0; i < adjacent_path.size() - 1; ++i){
@@ -123,7 +121,7 @@ namespace Planners
         
         total_cost1 = total_G1 + total_grid_cost1; 
         total_cost2 = total_G2 + total_grid_cost2; 
-#endif
+        
         result_data["algorithm"]               = algorithm_name_;
         result_data["path"]                    = path;
         result_data["time_spent"]              = _timer.getElapsedMicroSeconds();
