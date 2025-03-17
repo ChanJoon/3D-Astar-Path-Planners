@@ -126,7 +126,6 @@ catkin_install_python(PROGRAMS  scripts/test_algorithms.py
                                 scripts/test_algorithms_pseudo_random_paths.py
                                 scripts/compare_trajectories_rviz.py
                                 scripts/plan_caller.py
-                                scripts/generate2d_random_map.py
                                 setup.py
                                 DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
 )
@@ -140,4 +139,4 @@ install(DIRECTORY launch/ DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}/launch
 install(DIRECTORY config/ DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}/config)
 install(DIRECTORY rviz/ DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}/rviz)
 install(DIRECTORY resources/ 
-DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}/resources  
+DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}/resources)
