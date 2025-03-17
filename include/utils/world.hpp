@@ -38,82 +38,6 @@ namespace utils
         {
         }
         /**
-         * @brief Overloaded resizeWorld function for Eigen::Vector3i objects
-         * 
-         * @param _world_size Eigen::Vector3i object with world size data
-         * @param _resolution resolution to create the internal world vector
-         */
-        void resizeWorld(const Eigen::Vector3i &_world_size, const double &_resolution){
-            return resizeWorld(_world_size.x(), _world_size.y(), _world_size.z(), _resolution);
-        }
-        /**
-         * @brief It configures the inner world vector. Internally the world coordinates 
-         *  goes from [0, world_x_size], [0, world_y_size], [0, world_z_size]
-         *  It clears the previous world and create a new one. 
-         * @param _world_x_size 
-         * @param _world_y_size 
-         * @param _world_z_size 
-         * @param _resolution 
-         */
-        void resizeWorld(const int &_world_x_size,
-                         const int &_world_y_size,
-                         const int &_world_z_size,
-                         const double &_resolution)
-        {
-            if( _resolution <= 0.005 )
-                throw std::out_of_range("Resolution too small, it should be > 0.005");
-
-            world_x_size_ = _world_x_size;
-            world_y_size_ = _world_y_size;
-            world_z_size_ = _world_z_size;
-            resolution_   = _resolution;
-            x_y_size_      = static_cast<long>(world_x_size_) * world_y_size_;
-
-            discrete_world_vector_.clear();
-            discrete_world_vector_.resize(static_cast<long>(world_x_size_) * world_y_size_ * _world_z_size);
-            Node node;
-            std::fill(discrete_world_vector_.begin(), discrete_world_vector_.end(), node);
-            
-            for(long unsigned int i = 0; i < discrete_world_vector_.size(); ++i){
-                discrete_world_vector_[i].coordinates =  getDiscreteWorldPositionFromIndex(i);
-                discrete_world_vector_[i].world_index = i;
-            }
-            
-        }
-        /**
-         * @brief Set the Node Cost object overloaded function for continous coordinates
-         * 
-         * @param _x continous coordinate
-         * @param _y continous coordinate
-         * @param _z continous coordinate
-         * @param _cost 
-         * @return true if node is valid
-         * @return false if requested coordinates correspond to invalid node (outside the world)
-         */
-        bool setNodeCost(const double &_x, const double &_y, const double &_z, const double _cost){
-            
-            return setNodeCost( Eigen::Vector3i{ static_cast<int>(std::round(_x / resolution_)),
-                                       static_cast<int>(std::round(_y / resolution_)),
-                                       static_cast<int>(std::round(_z / resolution_))}, _cost);
-        }
-        /**
-         * @brief Set the Node Cost object 
-         * 
-         * @param _vec coordinates of the node
-         * @param _cost cost value assigned to it
-         * @return true if node is valid
-         * @return false if requested coordinates correspond to invalid node (outside the world)
-         */
-        bool setNodeCost(const Eigen::Vector3i &_vec, const double _cost){
-
-            if(!checkValid(_vec))
-                return false;
-            
-            discrete_world_vector_[getWorldIndex(_vec)].cost = _cost;
-
-        return true;
-        }
-        /**
          * @brief Set to its default state the flags, cost values, and parent values inside 
          * each world's node
          */
@@ -140,7 +64,7 @@ namespace utils
             if (!checkValid(_x, _y, _z))
                 return true;
 
-            if (discrete_world_vector_[getWorldIndex(_x, _y, _z)].occuppied)
+            if (discrete_world_vector_[getWorldIndex(_x, _y, _z)].occupied)
             {
                 return true;
             }
@@ -148,13 +72,13 @@ namespace utils
             return false;
         }
         /**
-         * @brief Overloaded isOccupied function for Eigen::Vector3i objects
+         * @brief Overloaded isOccupied function for Eigen::Vector3d objects
          * 
          * @param _coord discrete coordinates vector
          * @return true if node valid and not occupied 
          * @return false if node is outside the workspace of is marked as occupied 
          */
-        bool isOccupied(const Eigen::Vector3i &_coord) const{
+        bool isOccupied(const Eigen::Vector3d &_coord) const{
             return isOccupied(_coord.x(), _coord.y(), _coord.z());
         }
         /**
@@ -167,30 +91,7 @@ namespace utils
         bool isOccupied(const Node &_node) const{
             return isOccupied(_node.coordinates.x(), _node.coordinates.y(), _node.coordinates.z());
         }
-        /**
-         * @brief Set the world's node associated
-         * to these coordinates as occupied. 
-         * @param _x discrete coordinates
-         * @param _y discrete coordinates
-         * @param _z discrete coordinates
-         */
-        void setOccupied(const int _x, const int _y, const int _z)
-        {
 
-            if (!checkValid(_x, _y, _z))
-                return;
-
-            discrete_world_vector_[getWorldIndex(_x, _y, _z)].occuppied = true;
-        }
-        /**
-         * @brief Set the world's node associated
-         * 
-         * @param _pos discrete node position vector
-         */
-        void setOccupied(const Eigen::Vector3i &_pos){
-
-            return setOccupied(_pos.x(), _pos.y(), _pos.z());
-        }
         /**
          * @brief Checks the value of the internal flag of the node
          * that is used to mark that the node is in the open list
@@ -267,41 +168,7 @@ namespace utils
         bool isInClosedList(const Node &_node){
             return isInClosedList(_node.coordinates.x(), _node.coordinates.y(), _node.coordinates.z());
         }
-        /**
-         * @brief Set the is in closed list internal flag of the node associated to the 
-         * discrete coordinates 
-         * @param _x discrete_coordinated
-         * @param _y discrete_coordinated
-         * @param _z discrete_coordinated
-         * @param _value desired value
-         */
-        void setClosedValue(const int _x, const int _y, const int _z, const bool _value){
-            if (!checkValid(_x, _y, _z))
-                return;
 
-            discrete_world_vector_[getWorldIndex(_x, _y, _z)].isInClosedList = _value;
-        }
-        /**
-         * @brief Set the Closed Value object overloaded function for Eigen::Vector3i
-         * 
-         * @param _pos discrete position of the node
-         * @param _value the desired value 
-         */
-        void setClosedValue(const Eigen::Vector3i &_pos, const bool _value){
-            if (!checkValid(_pos))
-                return;
-
-            discrete_world_vector_[getWorldIndex(_pos)].isInClosedList = _value;
-        }
-        /**
-         * @brief Set the Closed Value object
-         * 
-         * @param _node 
-         * @param _value 
-         */
-        void setClosedValue(const Node &_node, const bool _value){
-            setClosedValue(_node.coordinates,_value);
-        }
         /**
          * @brief SSet the is in open list internal flag of the node associated to 
          * the discrete coordinates
@@ -318,13 +185,13 @@ namespace utils
             discrete_world_vector_[getWorldIndex(_x, _y, _z)].isInOpenList = _value;
         }
         /**
-         * @brief Overloaded function for Eigen::Vector3i. Set the is in open list internal flag of the node associated to 
+         * @brief Overloaded function for Eigen::Vector3d. Set the is in open list internal flag of the node associated to 
          * the discrete coordinates
          * 
          * @param _pos discrete coordinates
          * @param _value desired value
          */
-        void setOpenValue(const Eigen::Vector3i &_pos, const bool _value){
+        void setOpenValue(const Eigen::Vector3d &_pos, const bool _value){
 
             if(!checkValid(_pos))
                 return;
@@ -347,7 +214,7 @@ namespace utils
          * @param _vec discrete coordinates
          * @return Pointer to the corresponding node* object or nullptr if requested set of coordinates are not valid
          */
-        Node* getNodePtr(const Eigen::Vector3i &_vec) {
+        Node* getNodePtr(const Eigen::Vector3d &_vec) {
 
             if(!checkValid(_vec))
                 return nullptr;
@@ -382,13 +249,13 @@ namespace utils
         }
     private:
         /**
-         * @brief checkValid overloaded function for Eigen::Vector3i objects
+         * @brief checkValid overloaded function for Eigen::Vector3d objects
          * 
          * @param _pos discrete position object
          * @return true if position inside the workspace 
          * @return false if any of the coordinates is bigger than the associated world size dimension
          */
-        inline bool checkValid(const Eigen::Vector3i &_pos) const{
+        inline bool checkValid(const Eigen::Vector3d &_pos) const{
 
             return checkValid(_pos.x(), _pos.y(), _pos.z());
         }
@@ -413,12 +280,12 @@ namespace utils
             return true;
         }
         /**
-         * @brief getWorldIndex overloaded function for Eigen::Vector3i coordinates
+         * @brief getWorldIndex overloaded function for Eigen::Vector3d coordinates
          * 
          * @param _pos discrete position 
          * @return int world index associated to the requested discrete position
          */
-        inline long int getWorldIndex(const Eigen::Vector3i &_pos) const{
+        inline long int getWorldIndex(const Eigen::Vector3d &_pos) const{
 
             return getWorldIndex(_pos.x(), _pos.y(), _pos.z());
         }
@@ -443,16 +310,16 @@ namespace utils
          * @brief Get the Discrete World Position From Index object
          * 
          * @param _index Discrete index of the internal vector
-         * @return Eigen::Vector3i discrete coordinates vector
+         * @return Eigen::Vector3d discrete coordinates vector
          */
-        inline Eigen::Vector3i getDiscreteWorldPositionFromIndex(const int _index){
+        inline Eigen::Vector3d getDiscreteWorldPositionFromIndex(const int _index){
 
             int z = std::floor(_index / x_y_size_ );
             int ind = _index - ( z * x_y_size_ );
             int y = std::floor(ind / world_x_size_);
             int x = std::floor(ind % world_x_size_);
 
-            return {x, y, z};
+            return Eigen::Vector3d{static_cast<double>(x), static_cast<double>(y), static_cast<double>(z)};
         }
 
         std::vector<Planners::utils::Node> discrete_world_vector_;

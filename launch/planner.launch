@@ -5,7 +5,7 @@
     <!-- <arg name="map_name"            default="laberynth"/> -->
     <arg name="map"                 default="$(find heuristic_planners)/resources/3dmaps/$(arg map_name).pcd"/>
 
-    <arg name="algorithm_name"      default="costlazythetastar"/>
+    <arg name="algorithm_name"      default="thetastar"/>
 
     <arg name="world_size_x"        default="60"/>
     <arg name="world_size_y"        default="60"/>

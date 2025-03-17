@@ -55,16 +55,16 @@ namespace Planners
         }
     }
 
-    void ThetaStar::exploreNeighbours(Node* _current, const Eigen::Vector3i &_target,node_by_position &_index_by_pos){
+    void ThetaStar::exploreNeighbours(Node* _current, const Eigen::Vector3d &_target,node_by_position &_index_by_pos){
 
         for (unsigned int i = 0; i < direction.size(); ++i) {
 
-            Eigen::Vector3i newCoordinates = _current->coordinates + direction[i];
+            Eigen::Vector3d newCoordinates = _current->coordinates + direction[i];
             Node *successor = discrete_world_.getNodePtr(newCoordinates);
 
             if ( successor == nullptr || 
                  successor->isInClosedList || 
-                 successor->occuppied ||
+                 successor->occupied ||
                  successor->coordinates.z() < 5) 
                 continue;
     

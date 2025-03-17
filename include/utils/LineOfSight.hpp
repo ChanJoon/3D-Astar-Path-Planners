@@ -31,7 +31,7 @@ namespace Planners
              * @return true 
              * @return false 
              */
-            bool bresenham3D(const Eigen::Vector3i _lnode, const Eigen::Vector3i _rnode, const DiscreteWorld &_world, CoordinateListPtr _visited_nodes);
+            bool bresenham3D(const Eigen::Vector3d _lnode, const Eigen::Vector3d _rnode, const DiscreteWorld &_world, CoordinateListPtr _visited_nodes);
 
             /**
              * @brief Implementation of bressenham 3D line of sight algorithm

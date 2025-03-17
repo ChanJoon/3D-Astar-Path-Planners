@@ -10,7 +10,7 @@ namespace Planners
             {
                 return bresenham3D(_lnode->coordinates, _rnode->coordinates, _world, _visited_nodes);
             }
-            bool bresenham3D(const Eigen::Vector3i _lnode, const Eigen::Vector3i _rnode, const DiscreteWorld &_world, CoordinateListPtr _visited_nodes)
+            bool bresenham3D(const Eigen::Vector3d _lnode, const Eigen::Vector3d _rnode, const DiscreteWorld &_world, CoordinateListPtr _visited_nodes)
             {
                 if( geometry::distanceBetween2Nodes(_lnode, _rnode) <= dd_3D_ )
                     return true;
@@ -19,7 +19,7 @@ namespace Planners
                     // _visited_nodes.reset(new CoordinateList);
                 // }
                 int d1, d2;
-                Eigen::Vector3i vecS, vecDiff, vec0{_lnode}, vec1{_rnode};
+                Eigen::Vector3d vecS, vecDiff, vec0{_lnode}, vec1{_rnode};
                 vecDiff = geometry::abs(vec1 - vec0);
 
                 vec1.x() > vec0.x() ? vecS.x() = 1 : vecS.x() = -1;

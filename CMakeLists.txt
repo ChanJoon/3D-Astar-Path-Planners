@@ -3,9 +3,7 @@ project(heuristic_planners)
 
 add_compile_options(-std=c++17 -Wall -Wextra -pedantic)
 
-option(BUILD_ROS_SUPPORT    "Build with ROS Support" ON)
 option(OPTIMIZE_FLAG        "Enable Compiler Optimization for Runtime Performance" ON)
-option(BUILD_DEBUG          "Build debug features  " OFF)
 option(BUILD_COMPUTE_STATS  "Build Algorithms with statistics" ON)
 
 if(OPTIMIZE_FLAG)
@@ -27,28 +25,21 @@ if(OpenMP_CXX_FOUND)
     set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} ${OpenMP_EXE_LINKER_FLAGS}")
 endif()
 
-if(BUILD_ROS_SUPPORT)
-  add_compile_definitions(ROS)
-  find_package(catkin REQUIRED COMPONENTS
-    std_msgs
-    geometry_msgs
-    nav_msgs
-    visualization_msgs
-    message_generation
-    roscpp
-    pcl_conversions
-    pcl_ros
-    octomap_ros
-    costmap_2d
-    cv_bridge
-  )
-  find_package (Eigen3 REQUIRED)
-  find_package(PCL 1.7 REQUIRED)
-
-  if(BUILD_DEBUG)
-    add_definitions(-DPUB_EXPLORED_NODES)
-  endif()
-  unset(BUILD_DEBUG CACHE)
+find_package(catkin REQUIRED COMPONENTS
+  std_msgs
+  geometry_msgs
+  nav_msgs
+  visualization_msgs
+  message_generation
+  roscpp
+  pcl_conversions
+  pcl_ros
+  octomap_ros
+  costmap_2d
+  cv_bridge
+)
+find_package (Eigen3 REQUIRED)
+find_package(PCL 1.7 REQUIRED)
 
 catkin_python_setup()
 
@@ -66,10 +57,9 @@ generate_messages(
 
 catkin_package(
  INCLUDE_DIRS include
- LIBRARIES AlgorithmBase AStar AStarM1 AStarM2 ThetaStar ThetaStarM1 ThetaStarM2 ThetaStarAGR LazyThetaStar LazyThetaStarM1 LazyThetaStarM1Mod LazyThetaStarM2
+ LIBRARIES AlgorithmBase AStar AStarM1 AStarM2 ThetaStar ThetaStarM1 ThetaStarM2 ThetaStarAGR
  CATKIN_DEPENDS std_msgs visualization_msgs geometry_msgs nav_msgs roscpp message_runtime costmap_2d cv_bridge
 )
-endif()
 
 include_directories(
   include
@@ -87,9 +77,7 @@ list(APPEND ${PROJECT_NAME}_UTILS_SOURCES src/utils/geometry_utils.cpp
                                           src/utils/LineOfSight.cpp
                                           src/utils/metrics.cpp       
                                           )
-if(BUILD_ROS_SUPPORT)
-  list(APPEND ${PROJECT_NAME}_UTILS_SOURCES src/utils/ros/ROSInterfaces.cpp)
-endif()
+list(APPEND ${PROJECT_NAME}_UTILS_SOURCES src/utils/ros/ROSInterfaces.cpp)
 
 add_library(AlgorithmBase                   src/Planners/AlgorithmBase.cpp 
                                             ${${PROJECT_NAME}_UTILS_SOURCES})
@@ -105,10 +93,6 @@ add_library(ThetaStar          src/Planners/ThetaStar.cpp )
 add_library(ThetaStarM1        src/Planners/ThetaStarM1.cpp )
 add_library(ThetaStarM2        src/Planners/ThetaStarM2.cpp )
 add_library(ThetaStarAGR        src/Planners/ThetaStarAGR.cpp )
-add_library(LazyThetaStar      src/Planners/LazyThetaStar.cpp )
-add_library(LazyThetaStarM1    src/Planners/LazyThetaStarM1.cpp )
-add_library(LazyThetaStarM1Mod src/Planners/LazyThetaStarM1Mod.cpp )
-add_library(LazyThetaStarM2    src/Planners/LazyThetaStarM2.cpp )
 
 add_library(PlanEnv            src/plan_env/edt_environment.cpp
                                src/plan_env/obj_predictor.cpp
@@ -119,7 +103,7 @@ target_link_libraries(PlanEnv
   ${PCL_LIBRARIES}
 )
 
-list(APPEND ${PROJECT_NAME}_LIBRARIES AlgorithmBase AStar AStarM1 AStarM2 ThetaStar ThetaStarM1 ThetaStarM2 ThetaStarAGR LazyThetaStar LazyThetaStarM1 LazyThetaStarM1Mod LazyThetaStarM2 PlanEnv)  
+list(APPEND ${PROJECT_NAME}_LIBRARIES AlgorithmBase AStar AStarM1 AStarM2 ThetaStar ThetaStarM1 ThetaStarM2 ThetaStarAGR PlanEnv)  
 target_link_libraries(${${PROJECT_NAME}_LIBRARIES} ${catkin_LIBRARIES} ${Boost_LIBRARIES})
 if (OpenMP_CXX_FOUND)
   target_link_libraries(${${PROJECT_NAME}_LIBRARIES} OpenMP::OpenMP_CXX)
@@ -127,56 +111,41 @@ endif()
 add_dependencies( ${${PROJECT_NAME}_LIBRARIES} ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 list(APPEND ${PROJECT_NAME}_TARGETS ${${PROJECT_NAME}_LIBRARIES})
 
-if(BUILD_ROS_SUPPORT)
-  add_executable(planner_ros_node src/ROS/planner_ros_node.cpp )
-  add_dependencies(planner_ros_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS} ${${PROJECT_NAME}_LIBRARIES})
-  target_link_libraries(planner_ros_node ${catkin_LIBRARIES} ${${PROJECT_NAME}_LIBRARIES} PlanEnv -lstdc++fs Eigen3::Eigen -lcrypto -lssl)
-  if(OpenMP_CXX_FOUND)
-    target_link_libraries(planner_ros_node OpenMP::OpenMP_CXX)
-  endif()
-  list(APPEND ${PROJECT_NAME}_TARGETS planner_ros_node)
-
-
-
-  install(TARGETS ${${PROJECT_NAME}_TARGETS}
-  ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
-  LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
-  RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
-  )
-  
-  catkin_install_python(PROGRAMS  scripts/test_algorithms.py
-                                  scripts/test_algorithms_compare.py
-                                  scripts/test_algorithms_performance.py
-                                  scripts/test_algorithms_pseudo_random_paths.py
-                                  scripts/compare_trajectories_rviz.py
-                                  scripts/plan_caller.py
-                                  scripts/generate2d_random_map.py
-                                  setup.py
-                                  DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
-  )
-
-  install(DIRECTORY include/
-  DESTINATION ${CATKIN_PACKAGE_INCLUDE_DESTINATION}
-  FILES_MATCHING PATTERN "*.hpp"
-  )
-
-  install(DIRECTORY launch/ DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}/launch)
-  install(DIRECTORY config/ DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}/config)
-  install(DIRECTORY rviz/ DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}/rviz)
-  install(DIRECTORY resources/ 
-  DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}/resources  
-  PATTERN ".gridm" EXCLUDE)
-
-else()
-  
-  install(DIRECTORY include/
-    DESTINATION ${CMAKE_INSTALL_PREFIX}/include
-    FILES_MATCHING PATTERN "*.hpp"
-  )
-  
-  install(TARGETS ${${PROJECT_NAME}_TARGETS}
-    DESTINATION ${CMAKE_INSTALL_PREFIX}/bin
-  )
-
+add_executable(planner_ros_node src/ROS/planner_ros_node.cpp )
+add_dependencies(planner_ros_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS} ${${PROJECT_NAME}_LIBRARIES})
+target_link_libraries(planner_ros_node ${catkin_LIBRARIES} ${${PROJECT_NAME}_LIBRARIES} PlanEnv -lstdc++fs Eigen3::Eigen -lcrypto -lssl)
+if(OpenMP_CXX_FOUND)
+  target_link_libraries(planner_ros_node OpenMP::OpenMP_CXX)
 endif()
-unset(BUILD_ROS_SUPPORT CACHE)
+list(APPEND ${PROJECT_NAME}_TARGETS planner_ros_node)
+
+
+
+install(TARGETS ${${PROJECT_NAME}_TARGETS}
+ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
+LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
+RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
+)
+
+catkin_install_python(PROGRAMS  scripts/test_algorithms.py
+                                scripts/test_algorithms_compare.py
+                                scripts/test_algorithms_performance.py
+                                scripts/test_algorithms_pseudo_random_paths.py
+                                scripts/compare_trajectories_rviz.py
+                                scripts/plan_caller.py
+                                scripts/generate2d_random_map.py
+                                setup.py
+                                DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
+)
+
+install(DIRECTORY include/
+DESTINATION ${CATKIN_PACKAGE_INCLUDE_DESTINATION}
+FILES_MATCHING PATTERN "*.hpp"
+)
+
+install(DIRECTORY launch/ DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}/launch)
+install(DIRECTORY config/ DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}/config)
+install(DIRECTORY rviz/ DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}/rviz)
+install(DIRECTORY resources/ 
+DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}/resources  
+PATTERN ".gridm" EXCLUDE)

@@ -39,7 +39,7 @@ namespace Planners
          * @param _res resolution
          * @return geometry_msgs::Point 
          */
-        geometry_msgs::Point continousPoint(const Eigen::Vector3i &_vec, const double &_res);
+        geometry_msgs::Point continousPoint(const Eigen::Vector3d &_vec, const double &_res);
 
         /**
          * @brief Helper function for the configureWorldFromOccupancy (Grid) function 

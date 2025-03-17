@@ -14,23 +14,13 @@
 #include <Planners/AlgorithmBase.hpp>
 
 
-/**
- * @brief 
- * This Header includes some auxiliar ROS features
- * that the child classes as Lazy Theta* and so on will inherit
- * These ROS Debug helps the user analyzing the inner 
- * behavior of the algorithm, allowing step-by-step node processing 
- * and visualizing the open and closed set in RViz.
- * 
- */
-#ifdef ROS
+
 #include <ros/ros.h>
 #include <visualization_msgs/Marker.h>
 #include <pcl/point_cloud.h>
 #include <pcl/point_types.h>
 #include <pcl_ros/point_cloud.h>
 #include "utils/ros/ROSInterfaces.hpp"
-#endif
 
 namespace Planners{
 
@@ -70,7 +60,7 @@ namespace Planners{
          * DataVariant = std::variant<std::string, Eigen::Vector3i, CoordinateList, double, size_t, int, bool, unsigned int>;
          * TODO: Replace map here by unordered_map. Not much important, but it does not make sense to use a map.
          */
-        PathData findPath(const Eigen::Vector3i &_source, const Eigen::Vector3i &_target) override;
+        PathData findPath(const Eigen::Vector3d &_source, const Eigen::Vector3d &_target) override;
         
         /**
          * @brief Published occupation markers map to visualize the loaded map in RVIZ
@@ -78,24 +68,6 @@ namespace Planners{
          * be empty. It can help the user to verify if the inflation parameters produced the desired result.
          */
         void publishOccupationMarkersMap() override;
-        
-        /**
-         * @brief For this function to be compiled you should
-         * enable in CMakeLists all the ROS Related options (ROS and PUB_EXPLORED_NODES macros)
-         * 
-         * Note: If you want to do STEP BY STEP evaluation, uncomment the 
-         * getchar(); line at the end of this function, and you will be able
-         * to advance in the exploration just pressing a key.
-         * 
-         * @param _node The current node the algorithm is evaluating. Will be marked as a
-         * sphere to distinguish it between the open set and closed set markers
-         * @param _open_set: The closed set container
-         * @param _closed_set: The open set container
-         * TODO: Remove these sets parameter as they are no longer in the findPath function scope
-         * (They are currently member functions of the class).
-         */
-        template<typename T, typename U>
-        void publishROSDebugData(const Node* _node, const T &_open_set, const U &_closed_set);
         
     protected:
 
@@ -125,7 +97,7 @@ namespace Planners{
          * This operation of erase and re-insert is performed in order to update the position
          * of the node in the container. 
          */
-        virtual void exploreNeighbours(Node* _current, const Eigen::Vector3i &_target,node_by_position &_index_by_pos);
+        virtual void exploreNeighbours(Node* _current, const Eigen::Vector3d &_target,node_by_position &_index_by_pos);
 
         /**
          * @brief This functions implements the algorithm G function. 
@@ -167,7 +139,6 @@ namespace Planners{
         std::vector<Node*> closedSet_; /*!< TODO Comment */
         MagicalMultiSet openSet_; /*!< TODO Comment */
         
-#ifdef ROS
         ros::NodeHandle lnh_{"~"}; /*!< TODO Comment */
         ros::Publisher explored_nodes_marker_pub_, occupancy_marker_pub_,  /*!< TODO Comment */
                        openset_marker_pub_, closedset_marker_pub_, /*!< TODO Comment */
@@ -179,7 +150,6 @@ namespace Planners{
         float resolution_; /*!< TODO Comment */
     	pcl::PointCloud<pcl::PointXYZ>  occupancy_marker_;  /*!< TODO Comment */
 
-#endif
     };
 
 }

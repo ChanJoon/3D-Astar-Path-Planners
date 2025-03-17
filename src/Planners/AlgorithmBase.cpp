@@ -34,15 +34,20 @@ namespace Planners
 
     //////////////////////////////////////////////////////////////////////////////////
     //TODO(Chanjoon) Below four functions should be removed in the future 
-    void AlgorithmBase::setWorldSize(const Eigen::Vector3i &_worldSize,const double _resolution)
-    {
-        discrete_world_.resizeWorld(_worldSize, _resolution);
-    }
     Eigen::Vector3i AlgorithmBase::getWorldSize(){
-        return discrete_world_.getWorldSize();
+        Eigen::Vector3d size;
+        Eigen::Vector3d origin;
+        edt_environment_->sdf_map_->getRegion(origin, size);
+        
+        double resolution = edt_environment_->sdf_map_->getResolution();
+        return Eigen::Vector3i(
+            static_cast<int>(std::round(size.x() / resolution)),
+            static_cast<int>(std::round(size.y() / resolution)),
+            static_cast<int>(std::round(size.z() / resolution))
+        );
     }
     double AlgorithmBase::getWorldResolution(){
-        return discrete_world_.getResolution();
+        return edt_environment_->sdf_map_->getResolution();
     }
     utils::DiscreteWorld* AlgorithmBase::getInnerWorld(){
         return &discrete_world_;
@@ -53,48 +58,16 @@ namespace Planners
     {
         heuristic = std::bind(heuristic_, std::placeholders::_1, std::placeholders::_2);
     }
-    bool AlgorithmBase::configureCellCost(const Eigen::Vector3i &coordinates_, const double &_cost){
-
-        return discrete_world_.setNodeCost(coordinates_, _cost);
-    }
-    void AlgorithmBase::addCollision(const Eigen::Vector3i &coordinates_, bool do_inflate, unsigned int steps)
+    bool AlgorithmBase::detectCollision(Eigen::Vector3d &coordinates_)
     {
-        if (do_inflate)
-        {
-            inflateNodeAsCube(coordinates_, direction, steps);
-        }
-        else
-        {
-            discrete_world_.setOccupied(coordinates_);
-        }
-    }
-    void AlgorithmBase::addCollision(const Eigen::Vector3i &coordinates_)
-    {
-        addCollision(coordinates_, do_inflate_, inflate_steps_);
-    }
-    bool AlgorithmBase::detectCollision(const Eigen::Vector3i &coordinates_)
-    {
-        if (discrete_world_.isOccupied(coordinates_))
-        {
-            return true;
-        }
-        return false;
-    }
-    void AlgorithmBase::inflateNodeAsCube(const Eigen::Vector3i &_ref, const CoordinateList &_directions, const unsigned int &_inflate_steps)
-    {
-        for (const auto &it : _directions)
-        {
-            for (unsigned int i = 0; i < _inflate_steps; ++i)
-            {
-                auto new_vec = _ref + (i + 1) * it;
-                discrete_world_.setOccupied(new_vec);
-            }
-        }
+        double dist;
+        dist = edt_environment_->evaluateCoarseEDT(coordinates_, -1.0);
+        return dist <= 0.3;
     }
 
     PathData AlgorithmBase::createResultDataObject(const Node* _last, utils::Clock &_timer, 
                                                     const size_t _explored_nodes, bool _solved,
-                                                    const Eigen::Vector3i &_start, const unsigned int _sight_checks){
+                                                    const Eigen::Vector3d &_start, const unsigned int _sight_checks){
                                     
         PathData result_data;
 
@@ -156,7 +129,7 @@ namespace Planners
         result_data["time_spent"]              = _timer.getElapsedMicroSeconds();
         result_data["explored_nodes"]          = _explored_nodes;
         result_data["start_coords"]            = _start;
-        result_data["path_length"]             = geometry::calculatePathLength(path, discrete_world_.getResolution());
+        result_data["path_length"]             = geometry::calculatePathLength(path, edt_environment_->sdf_map_->getResolution());
 
         result_data["total_cost1"]              = total_cost1;
         result_data["total_cost2"]              = total_cost2;

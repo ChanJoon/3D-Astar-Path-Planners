@@ -34,9 +34,9 @@ namespace Planners
         class Node;
         struct NodeComparator;
 
-        using CoordinateList     = std::vector<Eigen::Vector3i>;
-        using CoordinateListPtr  = std::shared_ptr<std::vector<Eigen::Vector3i>>;
-        using DataVariant        = std::variant<std::string, Eigen::Vector3i, CoordinateList, double, size_t, int, bool, unsigned int>;
+        using CoordinateList     = std::vector<Eigen::Vector3d>;
+        using CoordinateListPtr  = std::shared_ptr<std::vector<Eigen::Vector3d>>;
+        using DataVariant        = std::variant<std::string, Eigen::Vector3d, CoordinateList, double, size_t, int, bool, unsigned int>;
         using PathData           = std::map<std::string, DataVariant>;
 
         //Compile time constants
@@ -99,7 +99,7 @@ namespace Planners
             public:
             Node *parent{nullptr};
 
-            Eigen::Vector3i coordinates;
+            Eigen::Vector3d coordinates;
 
             unsigned int G{0}, H{0}, C{0};
             
@@ -108,7 +108,7 @@ namespace Planners
             
             double cost{0};
 
-            bool occuppied{false};
+            bool occupied{false};
             bool isInOpenList{false};
             bool isInClosedList{false};
             /**
@@ -117,7 +117,7 @@ namespace Planners
              * @param coord_ 
              * @param parent_ 
              */
-            Node(Eigen::Vector3i coord_, Node *parent_ = nullptr)
+            Node(Eigen::Vector3d coord_, Node *parent_ = nullptr)
             {
                 parent = parent_;
                 coordinates = coord_;
@@ -146,7 +146,7 @@ namespace Planners
              */
             unsigned int getScoreWithSafetyCost()
             {
-                return G + H + cost;  //Add the distance cost.
+                return G + H + static_cast<unsigned int>(cost);  //Add the distance cost.
             }
 
         };

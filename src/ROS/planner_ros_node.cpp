@@ -7,10 +7,6 @@
 #include "Planners/ThetaStarM1.hpp"
 #include "Planners/ThetaStarM2.hpp"
 #include "Planners/ThetaStarAGR.hpp"
-#include "Planners/LazyThetaStar.hpp"
-#include "Planners/LazyThetaStarM1.hpp"
-#include "Planners/LazyThetaStarM1Mod.hpp"
-#include "Planners/LazyThetaStarM2.hpp"
 #include "utils/ros/ROSInterfaces.hpp"
 #include "utils/SaveDataVariantToFile.hpp"
 #include "utils/misc.hpp"
@@ -115,22 +111,34 @@ private:
         publishMarker(path_points_markers_, point_markers_pub_);
 
         //Astar coordinate list is std::vector<Eigen::Vector3i>
-        const auto discrete_goal = Eigen::Vector3i(static_cast<int>(std::round(_req.goal.x / resolution_)),
-                                                   static_cast<int>(std::round(_req.goal.y / resolution_)),
-                                                   static_cast<int>(std::round(_req.goal.z / resolution_)));
-        const auto discrete_start = Eigen::Vector3i(static_cast<int>(std::round(_req.start.x / resolution_)),
-                                                    static_cast<int>(std::round(_req.start.y / resolution_)),
-                                                    static_cast<int>(std::round(_req.start.z / resolution_)));
+        auto start_pos = Eigen::Vector3d((_req.start.x), (_req.start.y), (_req.start.z));
+        auto goal_pos = Eigen::Vector3d((_req.goal.x), (_req.goal.y), (_req.goal.z));
 
-        if( algorithm_->detectCollision(discrete_start) ){
-            std::cout << discrete_start << ": Start not valid" << std::endl;
+        if( algorithm_->detectCollision(start_pos) ){
+            std::cout << start_pos << ": Start not valid" << std::endl;
             return false;
         }
 
-        if( algorithm_->detectCollision(discrete_goal) ){
-            std::cout << discrete_goal << ": Goal not valid" << std::endl;
+        if( algorithm_->detectCollision(goal_pos) ){
+            std::cout << goal_pos << ": Goal not valid" << std::endl;
             return false;
         }
+
+        Eigen::Vector3d origin, size;
+        sdf_map_->getRegion(origin, size);
+        auto isWithinBounds = [&origin, &size](Eigen::Vector3d &pos){
+            return (pos.x() >= origin.x() && pos.y() >= origin.y() && pos.z() >= origin.z() &&
+                    pos.x() <= size.x() && pos.y() <= size.y() && pos.z() <= size.z());
+        };
+        if (!isWithinBounds(start_pos)) {
+            std::cout << start_pos << ": Start not within bounds" << std::endl;
+            return false;
+        }
+        if (!isWithinBounds(goal_pos)) {
+            std::cout << goal_pos << ": Goal not within bounds" << std::endl;
+            return false;
+        }
+
         std::vector<double> times;
         times.reserve(_req.tries.data);
         int real_tries = _req.tries.data;
@@ -141,11 +149,11 @@ private:
         global_path.header.stamp = ros::Time::now();
 
         for(int i = 0; i < real_tries; ++i){
-
-            auto path_data = algorithm_->findPath(discrete_start, discrete_goal);
+            //TODO(ChanJoon)
+            auto path_data = algorithm_->findPath(start_pos, goal_pos);
 
             if( std::get<bool>(path_data["solved"]) ){
-                Planners::utils::CoordinateList path;
+                std::vector<Eigen::Vector3d> path;
                 try{
                     _rep.time_spent.data           = std::get<double>(path_data["time_spent"] );
                     _rep.time_spent.data /= 1000;
@@ -166,7 +174,7 @@ private:
                         _rep.cost_weight.data          = std::get<double>(path_data["cost_weight"]);
                         _rep.max_los.data              = std::get<unsigned int>(path_data["max_line_of_sight_cells"]);
                     }
-                    path = std::get<Planners::utils::CoordinateList>(path_data["path"]);
+                    path = std::get<std::vector<Eigen::Vector3d>>(path_data["path"]);
 
                 }catch(std::bad_variant_access const& ex){
                     std::cerr << "Bad variant error: " << ex.what() << std::endl;
@@ -218,7 +226,7 @@ private:
 
                 if(_req.tries.data < 2 || i == ( _req.tries.data - 1) ){
 
-                    for(const auto &it: std::get<Planners::utils::CoordinateList>(path_data["path"])){
+                    for(const auto &it: std::get<std::vector<Eigen::Vector3d>>(path_data["path"])){
                         geometry_msgs::PoseStamped pose;
                         pose.header = global_path.header;
                         pose.pose.position = Planners::utils::continousPoint(it, resolution_);
@@ -300,24 +308,10 @@ private:
         }else if ( algorithm_name == "thetastaragr" ){
             ROS_INFO("Using Air-Ground Robot Aware Theta*");
             algorithm_.reset(new Planners::ThetaStarAGR(use3d_, ground_height_threshold, ground_to_air_transition_cost, air_movement_factor, flying_cost));
-        }else if( algorithm_name == "lazythetastar" ){
-            ROS_INFO("Using LazyTheta*");
-            algorithm_.reset(new Planners::LazyThetaStar(use3d_));
-        }else if( algorithm_name == "costlazythetastar"){
-            ROS_INFO("Using Cost Aware LazyTheta*");
-            algorithm_.reset(new Planners::LazyThetaStarM1(use3d_));
-        }else if( algorithm_name == "costlazythetastarmodified"){
-            ROS_INFO("Using Cost Aware LazyTheta*");
-            algorithm_.reset(new Planners::LazyThetaStarM1Mod(use3d_));
-        }else if( algorithm_name == "lazythetastarsafetycost"){
-            ROS_INFO("Using LazyTheta* Safety Cost");
-            algorithm_.reset(new Planners::LazyThetaStarM2(use3d_));
         }else{
             ROS_WARN("Wrong algorithm name parameter. Using ASTAR by default");
             algorithm_.reset(new Planners::AStar(use3d_));
         }
-
-        // algorithm_->setWorldSize(world_size_, resolution_);
 
         configureHeuristic(_heuristic);
 
@@ -387,7 +381,7 @@ private:
         }
     }
     //TODO(Chanjoon) Implement this function for EDT map
-    // std::vector<std::pair<Eigen::Vector3i, double>> getClosestObstaclesToPathPoints(const Planners::utils::CoordinateList &_path){
+    // std::vector<std::pair<Eigen::Vector3i, double>> getClosestObstaclesToPathPoints(const std::vector<Eigen::Vector3d> &_path){
         
     //     std::vector<std::pair<Eigen::Vector3i, double>> result;
     //     if ( use3d_ ){

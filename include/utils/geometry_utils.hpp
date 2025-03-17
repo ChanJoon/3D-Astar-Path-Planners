@@ -14,9 +14,7 @@
 #include <iostream>
 #include <vector>
 #include <cmath>
-#ifdef ROS
 #include <Eigen/Dense>
-#endif
 #include "utils/utils.hpp"
 #include "utils/LineOfSight.hpp"
 #include "utils/world.hpp"
@@ -69,7 +67,7 @@ namespace Planners
              * @param _v2 
              * @return unsigned int 
              */
-            unsigned int distanceBetween2Nodes(const Eigen::Vector3i &_v1, const Eigen::Vector3i &_v2);
+            unsigned int distanceBetween2Nodes(const Eigen::Vector3d &_v1, const Eigen::Vector3d &_v2);
             /**
              * @brief Discrete distance 
              * 
@@ -93,15 +91,15 @@ namespace Planners
              * @param _v2 
              * @return unsigned int 
              */
-            unsigned int NodesBetween2Nodes(const Eigen::Vector3i &_v1, const Eigen::Vector3i &_v2);
+            unsigned int NodesBetween2Nodes(const Eigen::Vector3d &_v1, const Eigen::Vector3d &_v2);
 
             /**
              * @brief Returns the absolute value vector 
              * 
              * @param _vec 
-             * @return Eigen::Vector3i 
+             * @return Eigen::Vector3d
              */
-            Eigen::Vector3i abs(const Eigen::Vector3i &_vec);
+            Eigen::Vector3d abs(const Eigen::Vector3d &_vec);
 
             /**
              * @brief 
@@ -130,7 +128,6 @@ namespace Planners
              */
             double angleBetweenThreePoints(const Eigen::Vector3i &_v1, const Eigen::Vector3i &_v2, const Eigen::Vector3i &_v3);
 
-#ifdef ROS
             /**
              * @brief 
              * 
@@ -160,7 +157,6 @@ namespace Planners
              * @return double 
              */
             double getCircunferenceRadius(const Eigen::Vector3d &_v1, const Eigen::Vector3d &_v2, const Eigen::Vector3d &_v3);
-#endif            
         }//namespace geometry
     }//namespace utils
 }

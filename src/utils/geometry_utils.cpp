@@ -26,7 +26,7 @@ namespace Planners
             {
                 return distanceBetween2Nodes(*_n1, *_n2);
             }
-            unsigned int distanceBetween2Nodes(const Eigen::Vector3i &_v1, const Eigen::Vector3i &_v2)
+            unsigned int distanceBetween2Nodes(const Eigen::Vector3d &_v1, const Eigen::Vector3d &_v2)
             {
                 return static_cast<unsigned int>(dist_scale_factor_ * sqrt(pow(_v1.x() - _v2.x(), 2) +
                                                                            pow(_v1.y() - _v2.y(), 2) +
@@ -40,13 +40,13 @@ namespace Planners
             {
                 return NodesBetween2Nodes(*_n1, *_n2);
             }
-            unsigned int NodesBetween2Nodes(const Eigen::Vector3i &_v1, const Eigen::Vector3i &_v2)
+            unsigned int NodesBetween2Nodes(const Eigen::Vector3d &_v1, const Eigen::Vector3d &_v2)
             {
                 return static_cast<unsigned int>(sqrt(pow(_v1.x() - _v2.x(), 2) +
                                                       pow(_v1.y() - _v2.y(), 2) +
                                                       pow(_v1.z() - _v2.z(), 2)));
             }
-            Eigen::Vector3i abs(const Eigen::Vector3i &_vec)
+            Eigen::Vector3d abs(const Eigen::Vector3d &_vec)
             {
                 return { std::abs(_vec.x()), std::abs(_vec.y()), std::abs(_vec.z()) };
             }
@@ -94,7 +94,6 @@ namespace Planners
             inline double moduleVector(const Eigen::Vector3i &_v){
                 return _v.norm();
             }
-#ifdef ROS
             double angleBetweenThreePoints(const Eigen::Vector3i &_v1, const Eigen::Vector3i &_v2, const Eigen::Vector3i &_v3){
                 return angleBetweenThreePoints(_v1, _v2, _v3);
             }
@@ -163,7 +162,6 @@ namespace Planners
 
                 return R;
             }
-#endif
 
         }
     }

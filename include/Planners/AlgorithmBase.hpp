@@ -33,7 +33,7 @@
 namespace Planners
 {
     using namespace utils;
-    using HeuristicFunction = std::function<unsigned int(Eigen::Vector3i, Eigen::Vector3i)>;
+    using HeuristicFunction = std::function<unsigned int(Eigen::Vector3d, Eigen::Vector3d)>;
 
     class Heuristic;
     class Clock;
@@ -71,37 +71,10 @@ namespace Planners
 
         void setEnvironment(EDTEnvironment::Ptr &env);
 
-        void setWorldSize(const Eigen::Vector3i &worldSize_,const double _resolution);
         Eigen::Vector3i getWorldSize();
         double getWorldResolution();
         utils::DiscreteWorld* getInnerWorld();
         void setHeuristic(HeuristicFunction heuristic_);
-        
-        /**
-         * @brief Mark a set of coordinates of the map as occupied (blocked)
-         * 
-         * @param coordinates_ Discrete vector of coordinates
-         * @param do_inflate enable inflation (mark surrounding coordinates as occupied)
-         * @param steps inflation steps (in multiples of the resolution value)
-         */
-        void addCollision(const Eigen::Vector3i &coordinates_, bool do_inflate, unsigned int steps);
-        
-        /**
-         * @brief Calls the addCollision with the internal inflation configuration values
-         * 
-         * @param coordinates_ Discrete coordinates vector
-         */
-        void addCollision(const Eigen::Vector3i &coordinates_);
-
-        /**
-         * @brief Function to use in the future to configure the cost of each node
-         * 
-         * @param coordinates_ Discrete coordinates
-         * @param _cost cost value 
-         * @return true 
-         * @return false 
-         */
-        bool configureCellCost(const Eigen::Vector3i &coordinates_, const double &_cost);
 
         /**
          * @brief Check if a set of discrete coordinates are marked as occupied
@@ -110,7 +83,7 @@ namespace Planners
          * @return true Occupied
          * @return false not occupied
          */
-        bool detectCollision(const Eigen::Vector3i &coordinates_);
+        bool detectCollision(Eigen::Vector3d &coordinates_);
 
         /**
          * @brief Main function that should be inherit by each algorithm. 
@@ -121,7 +94,7 @@ namespace Planners
          * @param _target Goal discrete coordinates
          * @return PathData Results stored as PathData object
          */
-        virtual PathData findPath(const Eigen::Vector3i &_source, const Eigen::Vector3i &_target) = 0;
+        virtual PathData findPath(const Eigen::Vector3d &_source, const Eigen::Vector3d &_target) = 0;
 
         /**
          * @brief Configure the simple inflation implementation
@@ -137,17 +110,6 @@ namespace Planners
         virtual void publishOccupationMarkersMap() = 0;
 
     protected:
-
-        /**
-         * @brief Basic inflation function 
-         * 
-         * @param _ref Discrete coordinates vector
-         * @param _directions Directions vector to inflate
-         * @param _inflate_steps number of cells to inflate in each direction
-         */
-        void inflateNodeAsCube(const Eigen::Vector3i &_ref,
-                               const CoordinateList &_directions,
-                               const unsigned int &_inflate_steps);
         
         /**
          * @brief Create a Result Data Object object
@@ -162,7 +124,7 @@ namespace Planners
          */
         virtual PathData createResultDataObject(const Node* _last, utils::Clock &_timer, 
                                                 const size_t _explored_nodes, bool _solved, 
-                                                const Eigen::Vector3i &_start, const unsigned int _sight_checks);
+                                                const Eigen::Vector3d &_start, const unsigned int _sight_checks);
 
                                                         
         HeuristicFunction heuristic;
