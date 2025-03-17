@@ -77,7 +77,6 @@ list(APPEND ${PROJECT_NAME}_UTILS_SOURCES src/utils/geometry_utils.cpp
                                           src/utils/LineOfSight.cpp
                                           src/utils/metrics.cpp       
                                           )
-list(APPEND ${PROJECT_NAME}_UTILS_SOURCES src/utils/ros/ROSInterfaces.cpp)
 
 add_library(AlgorithmBase                   src/Planners/AlgorithmBase.cpp 
                                             ${${PROJECT_NAME}_UTILS_SOURCES})

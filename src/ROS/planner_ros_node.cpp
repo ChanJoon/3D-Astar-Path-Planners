@@ -7,7 +7,6 @@
 #include "Planners/ThetaStarM1.hpp"
 #include "Planners/ThetaStarM2.hpp"
 #include "Planners/ThetaStarAGR.hpp"
-#include "utils/ros/ROSInterfaces.hpp"
 #include "utils/SaveDataVariantToFile.hpp"
 #include "utils/misc.hpp"
 #include "utils/geometry_utils.hpp"
@@ -229,12 +228,12 @@ private:
                     for(const auto &it: std::get<std::vector<Eigen::Vector3d>>(path_data["path"])){
                         geometry_msgs::PoseStamped pose;
                         pose.header = global_path.header;
-                        pose.pose.position = Planners::utils::continousPoint(it, resolution_);
+                        pose.pose.position = it;
                         pose.pose.orientation.w = 1;
                         global_path.poses.push_back(pose);
 
-                        path_line_markers_.points.push_back(Planners::utils::continousPoint(it, resolution_));
-                        path_points_markers_.points.push_back(Planners::utils::continousPoint(it, resolution_));
+                        path_line_markers_.points.push_back(it);
+                        path_points_markers_.points.push_back(it);
                     }
 
                     publishMarker(path_line_markers_, line_markers_pub_);
