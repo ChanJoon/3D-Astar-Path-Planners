@@ -180,15 +180,21 @@ private:
 
                 if(_req.tries.data < 2 || i == ( _req.tries.data - 1) ){
 
-                    for(const auto &it: std::get<std::vector<Eigen::Vector3d>>(path_data["path"])){
+                    for(const auto &it: path){
                         geometry_msgs::PoseStamped pose;
                         pose.header = global_path.header;
-                        pose.pose.position = it;
-                        pose.pose.orientation.w = 1;
+                        pose.pose.position.x = it.x();
+                        pose.pose.position.y = it.y();
+                        pose.pose.position.z = it.z();
+                        pose.pose.orientation.w = 1.0;
                         global_path.poses.push_back(pose);
 
-                        path_line_markers_.points.push_back(it);
-                        path_points_markers_.points.push_back(it);
+                        geometry_msgs::Point point;
+                        point.x = it.x();
+                        point.y = it.y();
+                        point.z = it.z();
+                        path_line_markers_.points.push_back(point);
+                        path_points_markers_.points.push_back(point);
                     }
 
                     publishMarker(path_line_markers_, line_markers_pub_);
@@ -329,22 +335,7 @@ private:
             ROS_WARN("Wrong Heuristic param. Using Euclidean Heuristics by default");
         }
     }
-    //TODO(Chanjoon) Implement this function for EDT map
-    // std::vector<std::pair<Eigen::Vector3i, double>> getClosestObstaclesToPathPoints(const std::vector<Eigen::Vector3d> &_path){
-        
-    //     std::vector<std::pair<Eigen::Vector3i, double>> result;
-    //     if ( use3d_ ){
-    //         //TODO grid3d distances does not take into account the inflation added internally by the algorithm
 
-    //         for(const auto &it: _path)
-    //             result.push_back( m_grid3d_->getClosestObstacle(it) );
-    //         }
-
-    //     else{//TODO IMplement for 2d
-    //         result.push_back(std::make_pair<Eigen::Vector3i, double>(Eigen::Vector3i{0,0,0}, 0.0));
-    //     }
-    //     return result;
-    // }
     void configMarkers(const std::string &_ns, const std::string &_frame, const double &_scale){
 
         path_line_markers_.ns = _ns;
@@ -420,7 +411,6 @@ private:
     //TODO Fix point markers
     ros::Publisher line_markers_pub_, point_markers_pub_, global_path_pub_;
 
-    std::unique_ptr<Grid3d> m_grid3d_;
     SDFMap::Ptr sdf_map_;
 
     std::unique_ptr<Planners::AlgorithmBase> algorithm_;
