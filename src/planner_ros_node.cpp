@@ -7,7 +7,6 @@
 #include "utils/geometry_utils.hpp"
 #include "utils/metrics.hpp"
 
-// Map
 #include "plan_env/edt_environment.h"
 
 #include <ros/ros.h>
@@ -24,11 +23,7 @@
 #include <heuristic_planners/GetPath.h>
 #include <heuristic_planners/SetAlgorithm.h>
 
-/**
- * @brief Demo Class that demonstrate how to use the algorithms classes and utils 
- * with ROS 
- * 
- */
+
 class HeuristicPlannerROS
 {
 
@@ -112,11 +107,10 @@ private:
         if(real_tries == 0) real_tries = 1;
 
         nav_msgs::Path global_path;
-        global_path.header.frame_id = "map";
+        global_path.header.frame_id = "world";
         global_path.header.stamp = ros::Time::now();
 
         for(int i = 0; i < real_tries; ++i){
-            //TODO(ChanJoon)
             auto path_data = algorithm_->findPath(start_pos, goal_pos, false, 0.0);
 
             if( std::get<bool>(path_data["solved"]) ){
@@ -190,18 +184,9 @@ private:
     }
     void configureAlgorithm(const std::string &algorithm_name, const std::string &_heuristic){
 
-        float ws_x, ws_y, ws_z;
-
-        lnh_.param("world_size_x", ws_x, (float)100.0); // In meters
-        lnh_.param("world_size_y", ws_y, (float)100.0); // In meters
-        lnh_.param("world_size_z", ws_z, (float)100.0); // In meters
         lnh_.param("resolution", resolution_, (float)0.2);
         lnh_.param("inflate_map", inflate_, (bool)true);
 
-        world_size_.x() = std::floor(ws_x / resolution_);
-        world_size_.y() = std::floor(ws_y / resolution_);
-        world_size_.z() = std::floor(ws_z / resolution_);
-        
         if( algorithm_name == "astar" ){
             ROS_INFO("Using A*");
             algorithm_.reset(new Planners::AStar());
@@ -227,10 +212,11 @@ private:
         algorithm_->init();
         
         std::string frame_id;
-        lnh_.param("frame_id", frame_id, std::string("map"));		
-        configMarkers(algorithm_name, frame_id, 0.3);
+        double marker_scale;
+        lnh_.param("frame_id", frame_id, std::string("map"));
+        lnh_.param("marker_scale", marker_scale, (double)0.1);
+        configMarkers(algorithm_name, frame_id, marker_scale);
 
-        //Algorithm specific parameters. Its important to set line of sight after configuring world size(it depends on the resolution)
         float cost_weight;
         lnh_.param("cost_weight", cost_weight, (float)0.0);
         algorithm_->setCostFactor(cost_weight);
@@ -331,8 +317,6 @@ private:
 
     ros::NodeHandle lnh_{"~"};
     ros::ServiceServer request_path_server_, change_planner_server_;
-    ros::Subscriber pointcloud_sub_, occupancy_grid_sub_;
-    //TODO Fix point markers
     ros::Publisher line_markers_pub_, point_markers_pub_, global_path_pub_;
 
     SDFMap::Ptr sdf_map_;
@@ -342,7 +326,6 @@ private:
     visualization_msgs::Marker path_line_markers_, path_points_markers_;
     
     //Parameters
-    Eigen::Vector3d world_size_; // Discrete
     float resolution_;
 
     bool inflate_{false};

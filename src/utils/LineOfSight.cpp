@@ -10,10 +10,14 @@ namespace Planners
             {
                 return bresenham3D(_lnode->coordinates, _rnode->coordinates, _edt_env, _visited_nodes);
             }
+            bool bresenham3D(const Node0 *_lnode, const Node0 *_rnode, const EDTEnvironment::Ptr &_edt_env, std::shared_ptr<std::vector<Eigen::Vector3d>> _visited_nodes)
+            {
+                return bresenham3D(_lnode->position, _rnode->position, _edt_env, _visited_nodes);
+            }
             bool bresenham3D(const Eigen::Vector3d _lnode, const Eigen::Vector3d _rnode, const EDTEnvironment::Ptr &_edt_env, std::shared_ptr<std::vector<Eigen::Vector3d>> _visited_nodes)
             {
-                if( geometry::distanceBetween2Nodes(_lnode, _rnode) <= dd_3D_ )
-                    return true;
+                // if( geometry::distanceBetween2Nodes(_lnode, _rnode) <= dd_3D_ )
+                //     return true;
                 
                 // if( _visited_nodes == nullptr ){ //Case in which its not used
                     // _visited_nodes.reset(new std::vector<Eigen::Vector3d>);
@@ -48,7 +52,9 @@ namespace Planners
                         d1 += 2 * vecDiff.y();
                         d2 += 2 * vecDiff.z();
                         //Check if visitor is occupied and add visitor
-                        if (_edt_env->sdf_map_->getInflateOccupancy(vec0) == 1)
+                        // if (_edt_env->sdf_map_->getInflateOccupancy(vec0) == 1)
+                        //     return false;
+                        if (_edt_env->evaluateCoarseEDT(vec0, -1.0) <= 0.3)
                             return false;
                         if ( _visited_nodes != nullptr )
                             _visited_nodes->push_back(vec0);
@@ -76,7 +82,9 @@ namespace Planners
                         d1 += 2 * vecDiff.x();
                         d2 += 2 * vecDiff.z();
                         //Check if visitor is occupied and add visitor
-                        if (_edt_env->sdf_map_->getInflateOccupancy(vec0) == 1)
+                        // if (_edt_env->sdf_map_->getInflateOccupancy(vec0) == 1)
+                        //     return false;
+                        if (_edt_env->evaluateCoarseEDT(vec0, -1.0) <= 0.3)
                             return false;
                         if ( _visited_nodes != nullptr )
                           _visited_nodes->push_back(vec0);
@@ -103,7 +111,9 @@ namespace Planners
                         d1 += 2 * vecDiff.y();
                         d2 += 2 * vecDiff.x();
                         //Check if visitor is occupied and add visitor
-                        if (_edt_env->sdf_map_->getInflateOccupancy(vec0) == 1)
+                        // if (_edt_env->sdf_map_->getInflateOccupancy(vec0) == 1)
+                        //     return false;
+                        if (_edt_env->evaluateCoarseEDT(vec0, -1.0) <= 0.3)
                             return false;
                         if ( _visited_nodes != nullptr )
                             _visited_nodes->push_back(vec0);

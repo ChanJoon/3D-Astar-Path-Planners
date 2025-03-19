@@ -36,6 +36,7 @@ namespace Planners
              * @return false If there is no line of sight between both nodes
              */
             bool bresenham3D(const Node *_lnode, const Node *_rnode, const EDTEnvironment::Ptr &_edt_env, std::shared_ptr<std::vector<Eigen::Vector3d>> _visited_nodes = nullptr);
+            bool bresenham3D(const Node0 *_lnode, const Node0 *_rnode, const EDTEnvironment::Ptr &_edt_env, std::shared_ptr<std::vector<Eigen::Vector3d>> _visited_nodes = nullptr);
 
             bool bresenham3DWithMaxThreshold(const Node *_lnode, const Node *_rnode, const EDTEnvironment::Ptr &_edt_env, const unsigned int _threshold);
         

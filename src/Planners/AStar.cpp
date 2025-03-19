@@ -32,58 +32,6 @@ void AStar::setParam() {
 void AStar::configAlgorithm() {
   closedSet_.reserve(50000);
   openSet_.reserve(50000);
-  // If compiled with ros and visualization
-  explored_nodes_marker_pub_ = lnh_.advertise<visualization_msgs::Marker>("explored_nodes", 1);
-  openset_marker_pub_ = lnh_.advertise<visualization_msgs::Marker>("openset_nodes", 1);
-  closedset_marker_pub_ = lnh_.advertise<visualization_msgs::Marker>("closed_set_nodes", 1);
-  best_node_marker_pub_ = lnh_.advertise<visualization_msgs::Marker>("best_node_marker", 1);
-  aux_text_marker_pub_ = lnh_.advertise<visualization_msgs::Marker>("aux_text_marker", 1);
-  occupancy_marker_pub_ =
-      lnh_.advertise<pcl::PointCloud<pcl::PointXYZ>>("occupancy_markers", 1, true);
-
-  std::string frame_id;
-  lnh_.param("frame_id", frame_id, std::string("map"));
-  occupancy_marker_.header.frame_id = frame_id;  // "world";
-
-  explored_node_marker_.header.frame_id = frame_id;  //"world";
-  explored_node_marker_.header.stamp = ros::Time();
-  explored_node_marker_.ns = "debug";
-  explored_node_marker_.id = 66;
-  explored_node_marker_.type = visualization_msgs::Marker::CUBE_LIST;
-  explored_node_marker_.action = visualization_msgs::Marker::ADD;
-  explored_node_marker_.pose.orientation.w = 1.0;
-  explored_node_marker_.scale.x = 1.0 * resolution_;
-  explored_node_marker_.scale.y = 1.0 * resolution_;
-  explored_node_marker_.scale.z = 1.0 * resolution_;
-  explored_node_marker_.color.a = 0.7;
-  explored_node_marker_.color.r = 0.0;
-  explored_node_marker_.color.g = 1.0;
-  explored_node_marker_.color.b = 0.0;
-
-  openset_markers_ = explored_node_marker_;
-  openset_markers_.color.b = 1.0;
-  openset_markers_.color.g = 0.0;
-  openset_markers_.id = 67;
-
-  closed_set_markers_ = explored_node_marker_;
-  closed_set_markers_.color.g = 0.0;
-  closed_set_markers_.color.r = 1.0;
-  explored_node_marker_.id = 68;
-
-  best_node_marker_ = explored_node_marker_;
-  best_node_marker_.color.g = 0.7;
-  best_node_marker_.color.b = 0.7;
-  best_node_marker_.id = 69;
-  best_node_marker_.type = visualization_msgs::Marker::SPHERE;
-
-  aux_text_marker_ = explored_node_marker_;
-  aux_text_marker_.type = visualization_msgs::Marker::TEXT_VIEW_FACING;
-  aux_text_marker_.id = 70;
-  aux_text_marker_.color.a = 0.7;
-  aux_text_marker_.color.g = 0.0;
-  aux_text_marker_.text = "";
-  aux_text_marker_.scale.z = 3.0 * resolution_;
-  last_publish_tamp_ = ros::Time::now();
 }
 
 inline unsigned int AStar::computeG(const Node *_current,
@@ -198,6 +146,36 @@ double AStar::getDiagonalHeu(Eigen::Vector3d x1, Eigen::Vector3d x2) {
   return tie_breaker_ * h;
 }
 
+inline void AStar::ComputeCost(NodePtr current, NodePtr neighbor, const Eigen::Vector3d& d_pos, const Eigen::Vector3d& target) {
+  double direct_cost = d_pos.norm();
+  double new_g_score = current->g_score + direct_cost;
+  
+  neighbor->parent = current;
+  neighbor->g_score = new_g_score;
+  neighbor->f_score = new_g_score + lambda_heuristic_ * getEuclHeu(neighbor->position, target);
+}
+
+inline void AStar::UpdateVertex(NodePtr current, NodePtr neighbor, const Eigen::Vector3d& d_pos, const Eigen::Vector3d& target) {
+  double old_g_score = neighbor->g_score;
+  
+  ComputeCost(current, neighbor, d_pos, target);
+  
+  // If we found a better path
+  if (neighbor->g_score < old_g_score) {
+    // If node is in open set but not at the top, we'd need to update its position
+    // Most priority queue implementations don't support this directly
+    // A common approach is to add the node again with updated cost
+    if (neighbor->node_state == IN_OPEN_SET) {
+      // Note: This is a simplified approach. A real implementation might use a
+      // priority queue that supports decreasing key operations
+      open_set_.push(neighbor); 
+    } else {
+      neighbor->node_state = IN_OPEN_SET;
+      open_set_.push(neighbor);
+    }
+  }
+}
+
 PathData AStar::findPath(Eigen::Vector3d _source,
                          Eigen::Vector3d _target,
                          bool dynamic,
@@ -221,7 +199,6 @@ PathData AStar::findPath(Eigen::Vector3d _source,
   NodePtr cur_node = NULL;
   NodePtr terminate_node = NULL;
 
-  ROS_INFO("Start A* search");
   /* ---------- search loop ---------- */
   while (!open_set_.empty()) {
     /* ---------- get lowest f_score node and pop node ---------- */
@@ -238,7 +215,6 @@ PathData AStar::findPath(Eigen::Vector3d _source,
       terminate_node = cur_node;
       retrievePath(terminate_node);
 
-      ROS_INFO("A* search done");
       return createResultDataObject(terminate_node, timer, use_node_num_, true, _source, 0);
     }
 
@@ -263,9 +239,12 @@ PathData AStar::findPath(Eigen::Vector3d _source,
           neighbor_pos = cur_pos + d_pos;
           /* ---------- check if in feasible space ---------- */
           /* inside map range */
-          if (neighbor_pos(0) <= origin_(0) || neighbor_pos(0) >= map_size_3d_(0) ||
-              neighbor_pos(1) <= origin_(1) || neighbor_pos(1) >= map_size_3d_(1) ||
-              neighbor_pos(2) <= origin_(2) || neighbor_pos(2) >= map_size_3d_(2)) {
+          // if (neighbor_pos(0) <= origin_(0) || neighbor_pos(0) >= map_size_3d_(0) ||
+          //     neighbor_pos(1) <= origin_(1) || neighbor_pos(1) >= map_size_3d_(1) ||
+          //     neighbor_pos(2) <= origin_(2) || neighbor_pos(2) >= map_size_3d_(2)) {
+          //   continue;
+          // }
+          if (edt_environment_->sdf_map_->isInMap(neighbor_pos) == false) {
             continue;
           }
 
@@ -277,24 +256,19 @@ PathData AStar::findPath(Eigen::Vector3d _source,
           //   continue;
           // }
 
-          // if (edt_environment_->sdf_map_->getInflateOccupancy(neighbor_pos) == 1) {
+          // if (edt_environment_->sdf_map_->getInflateOccupancy(neighbor_pos) == true) {
           //   continue;
           // }
+          if (edt_environment_->evaluateCoarseEDT(neighbor_pos, -1.0) <= 0.3) {
+            continue;
+          }
 
-          /* ---------- compute cost ---------- */
-          double tmp_g_score, tmp_f_score;
-          tmp_g_score = d_pos.norm() + cur_node->g_score;  // MEMO(ChanJoon) squareNorm()
-          tmp_f_score = tmp_g_score + lambda_heuristic_ * getEuclHeu(neighbor_pos, _target);
-          NodePtr tmp_node = expanded_nodes_.find(neighbor_pos);
+          NodePtr neighbor_node = expanded_nodes_.find(neighbor_pos);
 
-          if (tmp_node == NULL) {
-            NodePtr neighbor_node = path_node_pool_[use_node_num_];
+          if (neighbor_node == NULL) {
+            neighbor_node = path_node_pool_[use_node_num_];
             neighbor_node->position = neighbor_pos;
-            neighbor_node->parent = cur_node;
-            neighbor_node->g_score = tmp_g_score;
-            neighbor_node->f_score = tmp_f_score;
-            neighbor_node->node_state = IN_OPEN_SET;
-            open_set_.push(neighbor_node);
+            neighbor_node->g_score = std::numeric_limits<double>::infinity();
 
             expanded_nodes_.insert(neighbor_pos, neighbor_node);
 
@@ -304,13 +278,11 @@ PathData AStar::findPath(Eigen::Vector3d _source,
               std::cout << "run out of memory." << std::endl;
               return createResultDataObject(cur_node, timer, use_node_num_, false, _source, 0);
             }
-          } else if (tmp_g_score < tmp_node->g_score) {
-              tmp_node->parent = cur_node;
-              tmp_node->g_score = tmp_g_score;
-              tmp_node->f_score = tmp_f_score;
           }
-
-          /* ----------  ---------- */
+          if (neighbor_node->node_state == IN_CLOSE_SET) {
+            continue;
+          }
+          UpdateVertex(cur_node, neighbor_node, d_pos, _target);
         }
   }
 
