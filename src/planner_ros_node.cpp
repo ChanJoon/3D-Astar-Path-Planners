@@ -1,11 +1,7 @@
 #include <iostream>
 
 #include "Planners/AStar.hpp"
-#include "Planners/AStarM2.hpp"
-#include "Planners/AStarM1.hpp"
 #include "Planners/ThetaStar.hpp"
-#include "Planners/ThetaStarM1.hpp"
-#include "Planners/ThetaStarM2.hpp"
 #include "Planners/ThetaStarAGR.hpp"
 #include "utils/misc.hpp"
 #include "utils/geometry_utils.hpp"
@@ -121,7 +117,7 @@ private:
 
         for(int i = 0; i < real_tries; ++i){
             //TODO(ChanJoon)
-            auto path_data = algorithm_->findPath(start_pos, goal_pos);
+            auto path_data = algorithm_->findPath(start_pos, goal_pos, false, 0.0);
 
             if( std::get<bool>(path_data["solved"]) ){
                 std::vector<Eigen::Vector3d> path;
@@ -143,9 +139,10 @@ private:
                         _rep.c_cost.data               = std::get<unsigned int>(path_data["c_cost"]);
 
                         _rep.cost_weight.data          = std::get<double>(path_data["cost_weight"]);
-                        _rep.max_los.data              = std::get<unsigned int>(path_data["max_line_of_sight_cells"]);
                     }
-                    path = std::get<std::vector<Eigen::Vector3d>>(path_data["path"]);
+                    path = algorithm_->getPath();
+                    algorithm_->reset();
+
 
                 }catch(std::bad_variant_access const& ex){
                     std::cerr << "Bad variant error: " << ex.what() << std::endl;
@@ -208,21 +205,9 @@ private:
         if( algorithm_name == "astar" ){
             ROS_INFO("Using A*");
             algorithm_.reset(new Planners::AStar());
-        }else if( algorithm_name == "costastar" ){
-            ROS_INFO("Using Cost Aware A*");
-            algorithm_.reset(new Planners::AStarM1());
-        }else if( algorithm_name == "astarsafetycost" ){
-            ROS_INFO("Using A* Safety Cost");
-            algorithm_.reset(new Planners::AStarM2());    
         }else if ( algorithm_name == "thetastar" ){
             ROS_INFO("Using Theta*");
             algorithm_.reset(new Planners::ThetaStar());
-        }else if ( algorithm_name == "costhetastar" ){
-            ROS_INFO("Using Cost Aware Theta* ");
-            algorithm_.reset(new Planners::ThetaStarM1());
-        }else if ( algorithm_name == "thetastarsafetycost" ){
-            ROS_INFO("Using Theta* Safety Cost");
-            algorithm_.reset(new Planners::ThetaStarM2());
         }else if ( algorithm_name == "thetastaragr" ){
             ROS_INFO("Using Air-Ground Robot Aware Theta*");
             algorithm_.reset(new Planners::ThetaStarAGR());
@@ -233,23 +218,13 @@ private:
 
         configureHeuristic(_heuristic);
 
-        ROS_INFO("Using discrete world size: [%.2f, %.2f, %.2f]", world_size_.x(), world_size_.y(), world_size_.z());
-        ROS_INFO("Using resolution: [%f]", resolution_);
-
-        if(inflate_){
-            double inflation_size;
-            lnh_.param("inflation_size", inflation_size, 0.5);
-            inflation_steps_ = std::round(inflation_size / resolution_);
-            ROS_INFO("Inflation size %.2f, using inflation step %d", inflation_size, inflation_steps_);
-        }
-        algorithm_->setInflationConfig(inflate_, inflation_steps_);
-
         sdf_map_.reset(new SDFMap);
         sdf_map_->initMap(lnh_);
         edt_environment_.reset(new EDTEnvironment);
         edt_environment_->setMap(sdf_map_);
 
         algorithm_->setEnvironment(edt_environment_);
+        algorithm_->init();
         
         std::string frame_id;
         lnh_.param("frame_id", frame_id, std::string("map"));		

@@ -25,7 +25,7 @@ namespace Planners
              * @param _data 
              * @return CurvatureData 
              */
-            CurvatureData calculatePathCurvature(const CoordinateList &_data);
+            CurvatureData calculatePathCurvature(const std::vector<Eigen::Vector3d> &_data);
 
             /**
              * @brief 
@@ -34,7 +34,7 @@ namespace Planners
              * @param _threshold_angle 
              * @return AnglesData 
              */
-            AnglesData calculatePathAnglesMetrics(const CoordinateList &_data, const int _threshold_angle);
+            AnglesData calculatePathAnglesMetrics(const std::vector<Eigen::Vector3d> &_data, const int _threshold_angle);
 
             /**
              * @brief 

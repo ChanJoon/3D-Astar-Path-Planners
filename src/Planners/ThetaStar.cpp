@@ -5,8 +5,8 @@ namespace Planners
     ThetaStar::ThetaStar():AStar("thetastar") {}
     
     ThetaStar::ThetaStar(std::string _name = "thetastar" ):AStar(_name) {
-        checked_nodes.reset(new CoordinateList);
-        checked_nodes_current.reset(new CoordinateList);
+        checked_nodes.reset(new std::vector<Eigen::Vector3d>);
+        checked_nodes_current.reset(new std::vector<Eigen::Vector3d>);
 
         checked_nodes->reserve(5000);
         checked_nodes_current->reserve(5000);

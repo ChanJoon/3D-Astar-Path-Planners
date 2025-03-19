@@ -35,13 +35,13 @@
 #define IN_OPEN_SET 'b'
 #define NOT_EXPAND 'c'
 
-class Node {
+class Node0 {
     public:
      /* -------------------- */
      Eigen::Vector3i index;
      Eigen::Vector3d position;
      double g_score, f_score;
-     Node* parent;
+     Node0* parent;
      char node_state;
 
      // kinodynamic
@@ -52,14 +52,14 @@ class Node {
      int time_idx;
    
      /* -------------------- */
-     Node() {
+     Node0() {
        parent = NULL;
        node_state = NOT_EXPAND;
      }
-     ~Node(){};
+     ~Node0(){};
      EIGEN_MAKE_ALIGNED_OPERATOR_NEW
    };
-   typedef Node* NodePtr;
+   typedef Node0* NodePtr;
    
    class NodeComparator {
     public:
@@ -84,29 +84,29 @@ class Node {
    class NodeHashTable {
     private:
      /* data */
-     std::unordered_map<Eigen::Vector3i, NodePtr, matrix_hash0<Eigen::Vector3i>>
+     std::unordered_map<Eigen::Vector3d, NodePtr, matrix_hash0<Eigen::Vector3d>>
          data_3d_;
-     std::unordered_map<Eigen::Vector4i, NodePtr, matrix_hash0<Eigen::Vector4i>>
+     std::unordered_map<Eigen::Vector4d, NodePtr, matrix_hash0<Eigen::Vector4d>>
          data_4d_;
    
     public:
      NodeHashTable(/* args */) {}
      ~NodeHashTable() {}
-     void insert(Eigen::Vector3i idx, NodePtr node) {
+     void insert(Eigen::Vector3d idx, NodePtr node) {
        data_3d_.insert(std::make_pair(idx, node));
      }
-     void insert(Eigen::Vector3i idx, int time_idx, NodePtr node) {
+     void insert(Eigen::Vector3d idx, int time_idx, NodePtr node) {
        data_4d_.insert(std::make_pair(
-           Eigen::Vector4i(idx(0), idx(1), idx(2), time_idx), node));
+           Eigen::Vector4d(idx(0), idx(1), idx(2), time_idx), node));
      }
    
-     NodePtr find(Eigen::Vector3i idx) {
+     NodePtr find(Eigen::Vector3d idx) {
        auto iter = data_3d_.find(idx);
        return iter == data_3d_.end() ? NULL : iter->second;
      }
-     NodePtr find(Eigen::Vector3i idx, int time_idx) {
+     NodePtr find(Eigen::Vector3d idx, int time_idx) {
        auto iter =
-           data_4d_.find(Eigen::Vector4i(idx(0), idx(1), idx(2), time_idx));
+           data_4d_.find(Eigen::Vector4d(idx(0), idx(1), idx(2), time_idx));
        return iter == data_4d_.end() ? NULL : iter->second;
      }
    
@@ -134,13 +134,15 @@ namespace Planners
         enum { REACH_HORIZON = 1, REACH_END = 2, NO_PATH = 3, NEAR_END = 4 };
 
         void setEnvironment(const EDTEnvironment::Ptr &env);
+        void init();
+        void reset();
         void setHeuristic(HeuristicFunction heuristic_);
-        void setInflationConfig(const bool _inflate, const unsigned int _inflation_steps) { do_inflate_ = _inflate; inflate_steps_ = _inflation_steps;}
         virtual void setCostFactor(const float &_factor){ cost_weight_ = _factor; }
 
         bool detectCollision(Eigen::Vector3d &coordinates_);
 
-        virtual PathData findPath(const Eigen::Vector3d &_source, const Eigen::Vector3d &_target) = 0;
+        virtual PathData findPath(Eigen::Vector3d &_source, Eigen::Vector3d &_target) = 0;
+        virtual PathData findPath(Eigen::Vector3d _source, Eigen::Vector3d _target, bool dynamic, double time_start) = 0;
         std::vector<Eigen::Vector3d> getPath();
         std::vector<NodePtr> getVisitedNodes();
 
@@ -148,12 +150,15 @@ namespace Planners
         virtual PathData createResultDataObject(const Node* _last, utils::Clock &_timer, 
                                                 const size_t _explored_nodes, bool _solved, 
                                                 const Eigen::Vector3d &_start, const unsigned int _sight_checks);
+        virtual PathData createResultDataObject(const Node0* _last, utils::Clock &_timer, 
+                                                const size_t _explored_nodes, bool _solved, 
+                                                const Eigen::Vector3d &_start, const unsigned int _sight_checks);
 
                                                         
         HeuristicFunction heuristic;
         EDTEnvironment::Ptr edt_environment_;
         DiscreteWorld discrete_world_;
-        CoordinateList direction = {
+        std::vector<Eigen::Vector3d> direction = {
             { 0, 1, 0 }, {0, -1, 0}, { 1, 0, 0 }, { -1, 0, 0 }, { 0, 0, 1}, { 0, 0, -1}, //6 first elements
             { 1, -1, 0 }, { -1, 1, 0 }, { -1, -1, 0 }, { 1, 1, 0 },  { -1, 0, -1 }, //7-18 inclusive
             { 1, 0, 1 }, { 1, 0, -1 }, {-1, 0, 1}, { 0, -1, 1 }, { 0, 1, 1 }, { 0, 1, -1 },  { 0, -1, -1 }, 
@@ -161,16 +166,16 @@ namespace Planners
         };
             
 
-        unsigned int inflate_steps_{1};
-        bool do_inflate_{true};
         double cost_weight_{0};
 
         const std::string algorithm_name_{""};
 
         /* ---------- data structures ---------- */
         vector<NodePtr> path_node_pool_;
-        int use_node_num_, iter_num_;
+        int use_node_num_ = 0;
+        int iter_num_ = 0;
         NodeHashTable expanded_nodes_;
+        NodeHashTable close_list_;
         std::priority_queue<NodePtr, std::vector<NodePtr>, NodeComparator> open_set_;
         std::vector<NodePtr> path_nodes_;
 
@@ -180,7 +185,6 @@ namespace Planners
         bool is_shot_succ_ = false;
         Eigen::MatrixXd coef_shot_;
         double t_shot_;
-        bool has_path_ = false;
 
         /* ---------- parameter ---------- */
         /* search */
@@ -194,7 +198,7 @@ namespace Planners
         /* map */
         double resolution_, inv_resolution_, time_resolution_, inv_time_resolution_;
         Eigen::Vector3d origin_, map_size_3d_;
-        double time_origin_;
+        double time_origin_ = 0.0;
 
         /* helper */
         Eigen::Vector3i posToIndex(Eigen::Vector3d pt);

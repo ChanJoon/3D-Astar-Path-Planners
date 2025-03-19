@@ -22,25 +22,13 @@ namespace utils
 {
     class Node;
 
-    /**
-     * @brief Class implementing the data structure storing the map related data that algorithms uses internally
-     * 
-     */
     class DiscreteWorld
     {
 
     public:
-        /**
-         * @brief Construct a new Discrete World object
-         * 
-         */
         DiscreteWorld()
         {
         }
-        /**
-         * @brief Set to its default state the flags, cost values, and parent values inside 
-         * each world's node
-         */
         void resetWorld(){
             
             for(auto &it: discrete_world_vector_){
@@ -49,47 +37,6 @@ namespace utils
                 it.H = it.G = it.C = 0;
                 it.parent = nullptr;
             }
-        }
-        /**
-         * @brief Function to check is the node is valid 
-         * 
-         * @param _x discrete coordinate
-         * @param _y discrete coordinate
-         * @param _z discrete coordinate
-         * @return true if node valid and not occupied
-         * @return false if node is outside the workspace of is marked as occupied
-         */
-        bool isOccupied(const int _x, const int _y, const int _z) const
-        {
-            if (!checkValid(_x, _y, _z))
-                return true;
-
-            if (discrete_world_vector_[getWorldIndex(_x, _y, _z)].occupied)
-            {
-                return true;
-            }
-
-            return false;
-        }
-        /**
-         * @brief Overloaded isOccupied function for Eigen::Vector3d objects
-         * 
-         * @param _coord discrete coordinates vector
-         * @return true if node valid and not occupied 
-         * @return false if node is outside the workspace of is marked as occupied 
-         */
-        bool isOccupied(const Eigen::Vector3d &_coord) const{
-            return isOccupied(_coord.x(), _coord.y(), _coord.z());
-        }
-        /**
-         * @brief Overloaded isOccupied function for Node objects
-         * 
-         * @param _node node object
-         * @return true if node valid and not occupied 
-         * @return false if node is outside the workspace of is marked as occupied 
-         */
-        bool isOccupied(const Node &_node) const{
-            return isOccupied(_node.coordinates.x(), _node.coordinates.y(), _node.coordinates.z());
         }
 
         /**
@@ -229,24 +176,7 @@ namespace utils
         const std::vector<Planners::utils::Node>& getElements() const{
             return discrete_world_vector_;
         }
-        /**
-         * @brief Get the Resolution stored inside
-         * 
-         * @return double resolution used internally
-         */
-        double getResolution() const{
-            return resolution_;
-        }
-        /**
-         * @brief Get the World Size internal object (discrete)
-         * 
-         * @return Eigen::Vector3i 
-         */
-        Eigen::Vector3i getWorldSize() const{
-            return { static_cast<int>(world_x_size_),
-                     static_cast<int>(world_y_size_), 
-                     static_cast<int>(world_z_size_)};
-        }
+
     private:
         /**
          * @brief checkValid overloaded function for Eigen::Vector3d objects
@@ -305,21 +235,6 @@ namespace utils
             // Also, all the functions using this method always should check if the _x _y and _z values
             // are inside the bounds
             return static_cast<long unsigned int>( _z * x_y_size_ + _y * world_x_size_ + _x);
-        }
-        /**
-         * @brief Get the Discrete World Position From Index object
-         * 
-         * @param _index Discrete index of the internal vector
-         * @return Eigen::Vector3d discrete coordinates vector
-         */
-        inline Eigen::Vector3d getDiscreteWorldPositionFromIndex(const int _index){
-
-            int z = std::floor(_index / x_y_size_ );
-            int ind = _index - ( z * x_y_size_ );
-            int y = std::floor(ind / world_x_size_);
-            int x = std::floor(ind % world_x_size_);
-
-            return Eigen::Vector3d{static_cast<double>(x), static_cast<double>(y), static_cast<double>(z)};
         }
 
         std::vector<Planners::utils::Node> discrete_world_vector_;

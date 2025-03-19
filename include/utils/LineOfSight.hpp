@@ -21,7 +21,7 @@ namespace Planners
     {
         namespace LineOfSight
         {
-            bool bresenham3D(const Eigen::Vector3d _lnode, const Eigen::Vector3d _rnode, const EDTEnvironment::Ptr &_edt_env, CoordinateListPtr _visited_nodes);
+            bool bresenham3D(const Eigen::Vector3d _lnode, const Eigen::Vector3d _rnode, const EDTEnvironment::Ptr &_edt_env, std::shared_ptr<std::vector<Eigen::Vector3d>> _visited_nodes);
 
             /**
              * @brief Implementation of bressenham 3D line of sight algorithm
@@ -35,7 +35,7 @@ namespace Planners
              * @return true If there exists line of sight between both nodes
              * @return false If there is no line of sight between both nodes
              */
-            bool bresenham3D(const Node *_lnode, const Node *_rnode, const EDTEnvironment::Ptr &_edt_env, CoordinateListPtr _visited_nodes = nullptr);
+            bool bresenham3D(const Node *_lnode, const Node *_rnode, const EDTEnvironment::Ptr &_edt_env, std::shared_ptr<std::vector<Eigen::Vector3d>> _visited_nodes = nullptr);
 
             bool bresenham3DWithMaxThreshold(const Node *_lnode, const Node *_rnode, const EDTEnvironment::Ptr &_edt_env, const unsigned int _threshold);
         

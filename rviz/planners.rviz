@@ -24,7 +24,7 @@ Panels:
   - Class: rviz/Time
     Name: Time
     SyncMode: 0
-    SyncSource: Map PointCloud
+    SyncSource: ""
 Preferences:
   PromptSaveOnExit: true
 Toolbars:
@@ -57,10 +57,6 @@ Visualization Manager:
       Frame Timeout: 15
       Frames:
         All Enabled: true
-        sensor:
-          Value: true
-        world:
-          Value: true
       Marker Alpha: 1
       Marker Scale: 1
       Name: TF
@@ -68,19 +64,17 @@ Visualization Manager:
       Show Axes: true
       Show Names: false
       Tree:
-        world:
-          sensor:
-            {}
+        {}
       Update Interval: 0
       Value: true
     - Class: rviz/Marker
-      Enabled: false
+      Enabled: true
       Marker Topic: /planner_ros_node/path_line_markers
       Name: Path Line Markers
       Namespaces:
-        {}
+        astar: true
       Queue Size: 100
-      Value: false
+      Value: true
     - Class: rviz/Marker
       Enabled: true
       Marker Topic: /planner_ros_node/astar_explored_nodes
@@ -90,13 +84,13 @@ Visualization Manager:
       Queue Size: 100
       Value: true
     - Class: rviz/Marker
-      Enabled: true
+      Enabled: false
       Marker Topic: /planner_ros_node/path_points_markers
       Name: Path Point Markers
       Namespaces:
-        thetastaragr: true
+        {}
       Queue Size: 100
-      Value: true
+      Value: false
     - Class: rviz/Marker
       Enabled: true
       Marker Topic: /planner_ros_node/aux_text_marker
@@ -207,7 +201,7 @@ Visualization Manager:
       Buffer Length: 1
       Class: rviz/Path
       Color: 52; 101; 164
-      Enabled: true
+      Enabled: false
       Head Diameter: 0.30000001192092896
       Head Length: 0.20000000298023224
       Length: 0.5
@@ -226,7 +220,7 @@ Visualization Manager:
       Shaft Length: 0.10000000149011612
       Topic: /planner_ros_node/global_path
       Unreliable: false
-      Value: true
+      Value: false
     - Alpha: 1
       Buffer Length: 1
       Class: rviz/Path
@@ -351,7 +345,7 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz/Orbit
-      Distance: 66.69908905029297
+      Distance: 39.731075286865234
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.05999999865889549
         Stereo Focal Distance: 1
@@ -359,17 +353,17 @@ Visualization Manager:
         Value: false
       Field of View: 0.7853981852531433
       Focal Point:
-        X: 25.238666534423828
-        Y: -9.294516563415527
-        Z: -5.28327751159668
+        X: 19.298778533935547
+        Y: -5.755382061004639
+        Z: 0.022448405623435974
       Focal Shape Fixed Size: true
       Focal Shape Size: 0.05000000074505806
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.009999999776482582
-      Pitch: 0.3747975826263428
+      Pitch: 0.10979779064655304
       Target Frame: <Fixed Frame>
-      Yaw: 2.565014600753784
+      Yaw: 2.1650161743164062
     Saved: ~
 Window Geometry:
   Displays:

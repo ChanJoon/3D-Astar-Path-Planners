@@ -31,7 +31,7 @@ namespace Planners
         inline virtual void ComputeCost(Node *_s_aux, Node *_s2_aux);
         virtual void exploreNeighbours(Node* _current, const Eigen::Vector3d &_target,node_by_position &_index_by_pos) override;
 
-        utils::CoordinateListPtr checked_nodes, checked_nodes_current;
+        std::shared_ptr<std::vector<Eigen::Vector3d>> checked_nodes, checked_nodes_current;
 
     };
 

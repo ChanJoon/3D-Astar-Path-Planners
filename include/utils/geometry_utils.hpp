@@ -26,9 +26,9 @@ namespace Planners
     {
         namespace geometry
         {
-            float calculatePathLength(const CoordinateList &_path, const double &_resolution);
+            float calculatePathLength(const std::vector<Eigen::Vector3d> &_path, const double &_resolution);
 
-            utils::CoordinateList getAdjacentPath(const utils::CoordinateList &_path, const EDTEnvironment::Ptr &_edt_env);
+            std::vector<Eigen::Vector3d> getAdjacentPath(const std::vector<Eigen::Vector3d> &_path, const EDTEnvironment::Ptr &_edt_env);
 
             unsigned int distanceBetween2Nodes(const Node &_n1, const Node &_n2);
 

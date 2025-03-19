@@ -7,8 +7,10 @@ option(OPTIMIZE_FLAG        "Enable Compiler Optimization for Runtime Performanc
 
 if(OPTIMIZE_FLAG)
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O2")
+  set(CMAKE_BUILD_TYPE Release)
 else()
   add_compile_options(-fsanitize=address,undefined -static-libasan -g3)
+  set(CMAKE_BUILD_TYPE Debug)
 endif()
 
 find_package(Boost)
@@ -52,7 +54,7 @@ generate_messages(
 
 catkin_package(
  INCLUDE_DIRS include
- LIBRARIES AlgorithmBase AStar AStarM1 AStarM2 ThetaStar ThetaStarM1 ThetaStarM2 ThetaStarAGR
+ LIBRARIES AlgorithmBase AStar ThetaStar ThetaStarAGR
  CATKIN_DEPENDS std_msgs visualization_msgs geometry_msgs nav_msgs roscpp message_runtime costmap_2d cv_bridge
 )
 
@@ -80,11 +82,7 @@ add_library(AStar                  src/Planners/AStar.cpp
                                             ${${PROJECT_NAME}_UTILS_SOURCES}
                                             )
 
-add_library(AStarM1            src/Planners/AStarM1.cpp ) 
-add_library(AStarM2            src/Planners/AStarM2.cpp ) 
 add_library(ThetaStar          src/Planners/ThetaStar.cpp )
-add_library(ThetaStarM1        src/Planners/ThetaStarM1.cpp )
-add_library(ThetaStarM2        src/Planners/ThetaStarM2.cpp )
 add_library(ThetaStarAGR        src/Planners/ThetaStarAGR.cpp )
 
 add_library(PlanEnv            src/plan_env/edt_environment.cpp
@@ -96,7 +94,7 @@ target_link_libraries(PlanEnv
   ${PCL_LIBRARIES}
 )
 
-list(APPEND ${PROJECT_NAME}_LIBRARIES AlgorithmBase AStar AStarM1 AStarM2 ThetaStar ThetaStarM1 ThetaStarM2 ThetaStarAGR PlanEnv)  
+list(APPEND ${PROJECT_NAME}_LIBRARIES AlgorithmBase AStar ThetaStar ThetaStarAGR PlanEnv)  
 target_link_libraries(${${PROJECT_NAME}_LIBRARIES} ${catkin_LIBRARIES} ${Boost_LIBRARIES})
 if (OpenMP_CXX_FOUND)
   target_link_libraries(${${PROJECT_NAME}_LIBRARIES} OpenMP::OpenMP_CXX)
@@ -104,7 +102,7 @@ endif()
 add_dependencies( ${${PROJECT_NAME}_LIBRARIES} ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 list(APPEND ${PROJECT_NAME}_TARGETS ${${PROJECT_NAME}_LIBRARIES})
 
-add_executable(planner_ros_node src/ROS/planner_ros_node.cpp )
+add_executable(planner_ros_node src/planner_ros_node.cpp )
 add_dependencies(planner_ros_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS} ${${PROJECT_NAME}_LIBRARIES})
 target_link_libraries(planner_ros_node ${catkin_LIBRARIES} ${${PROJECT_NAME}_LIBRARIES} PlanEnv -lstdc++fs Eigen3::Eigen -lcrypto -lssl)
 if(OpenMP_CXX_FOUND)

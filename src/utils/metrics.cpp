@@ -8,7 +8,7 @@ namespace Planners
 
         namespace metrics
         {
-            CurvatureData calculatePathCurvature(const CoordinateList &_data)
+            CurvatureData calculatePathCurvature(const std::vector<Eigen::Vector3d> &_data)
             {
                 std::vector<double> curvatures;
 
@@ -35,7 +35,7 @@ namespace Planners
                 }
                 return std::make_tuple(0.0, 0.0, 0.0, 0.0);
             }
-            AnglesData calculatePathAnglesMetrics(const CoordinateList &_data, const int _threshold_angle)
+            AnglesData calculatePathAnglesMetrics(const std::vector<Eigen::Vector3d> &_data, const int _threshold_angle)
             {
                 std::vector<double> angles;
                 int changes{0};

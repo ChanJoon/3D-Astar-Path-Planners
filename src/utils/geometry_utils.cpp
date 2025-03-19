@@ -7,7 +7,7 @@ namespace Planners
         namespace geometry
         {
 
-            float calculatePathLength(const CoordinateList &_path, const double &_resolution)
+            float calculatePathLength(const std::vector<Eigen::Vector3d> &_path, const double &_resolution)
             {
                 float len = 0;
                 for (long unsigned int i = 1; i < _path.size(); i++)
@@ -50,16 +50,16 @@ namespace Planners
             {
                 return { std::abs(_vec.x()), std::abs(_vec.y()), std::abs(_vec.z()) };
             }
-            utils::CoordinateList getAdjacentPath(const utils::CoordinateList &_path, const EDTEnvironment::Ptr &_edt_env){
+            std::vector<Eigen::Vector3d> getAdjacentPath(const std::vector<Eigen::Vector3d> &_path, const EDTEnvironment::Ptr &_edt_env){
         
                 if( _path.size() == 0)
                     return {};
 
-                utils::CoordinateList adjacent_path;
+                std::vector<Eigen::Vector3d> adjacent_path;
                 adjacent_path.push_back(_path[0]);
         
-                utils::CoordinateListPtr visited_nodes;
-                visited_nodes.reset(new CoordinateList);
+                std::shared_ptr<std::vector<Eigen::Vector3d>> visited_nodes;
+                visited_nodes.reset(new std::vector<Eigen::Vector3d>);
 
                 for(size_t i = 0; i < _path.size() -1 ; ++i){
                     utils::LineOfSight::bresenham3D(_path[i], _path[i+1], _edt_env, visited_nodes);
@@ -72,7 +72,7 @@ namespace Planners
                     adjacent_path.push_back(_path[i]);
                 }
             
-                    visited_nodes.reset(new utils::CoordinateList);
+                    visited_nodes.reset(new std::vector<Eigen::Vector3d>);
                 }
 
                 return adjacent_path;

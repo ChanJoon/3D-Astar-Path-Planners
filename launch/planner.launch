@@ -4,29 +4,26 @@
     <!-- <arg name="map_name"            default="wall"/> -->
     <!-- <arg name="map_name"            default="laberynth"/> -->
     <arg name="map"                 default="$(find heuristic_planners)/resources/3dmaps/$(arg map_name).pcd"/>
+    <arg name="use_marsim"          default="false"/>
 
     <arg name="algorithm_name"      default="thetastar"/>
 
-    <arg name="world_size_x"        default="60"/>
-    <arg name="world_size_y"        default="60"/>
-    <arg name="world_size_z"        default="20"/>
+    <arg name="world_size_x"        default="20"/>
+    <arg name="world_size_y"        default="20"/>
+    <arg name="world_size_z"        default="10"/>
     <arg name="resolution"          default="0.1"/>
 
-    <arg name="inflate_map"         default="true"/>
-    <arg name="inflation_size"      default="$(arg resolution)"/>
     <!-- Possibles values are: euclidean, euclidean_optimized, manhattan, octogonal and dijkstra -->
     <arg name="heuristic"         default="euclidean"/>
 
-    <arg name="use_marsim"          default="false"/>
-    <!-- This should be a folder -->
-
     <arg name="overlay_markers"     default="false"/>
-    
     <arg name="cost_weight" default="4.0"/>
 
-    <!-- GRIDM Generators Parameters -->
-    <arg name="cost_scaling_factor" default="2.0"/>  
-    <arg name="robot_radius"        default="0.4"/> 
+    <!-- intrinsic params of the depth camera -->
+    <arg name="cx" value="321.04638671875"/>
+    <arg name="cy" value="243.44969177246094"/>
+    <arg name="fx" value="387.229248046875"/>
+    <arg name="fy" value="387.229248046875"/>
     
     <arg name="output" default="screen"/>
     <node pkg="heuristic_planners" type="planner_ros_node" name="planner_ros_node" output="$(arg output)" required="true" >
@@ -38,17 +35,18 @@
         <param name="world_size_y"          value="$(arg world_size_y)"/>
         <param name="world_size_z"          value="$(arg world_size_z)"/>
         <param name="resolution"            value="$(arg resolution)"/>
-        <param name="inflate_map"           value="$(arg inflate_map)"/>
-        <param name="inflation_size"        value="$(arg inflation_size)"/>
         
         <param name="overlay_markers"       value="$(arg overlay_markers)"/>
         <param name="algorithm"             value="$(arg algorithm_name)"/>
         <param name="cost_weight"           value="$(arg cost_weight)"/>
         <param name="heuristic"             value="$(arg heuristic)"/>
 
-        <param name="cost_scaling_factor"   value="$(arg cost_scaling_factor)"/>
-        <param name="robot_radius"          value="$(arg robot_radius)"/>
         <param name="use_marsim"            value="$(arg use_marsim)"/>
+
+        <param name="astar/resolution" value="0.1"/>
+        <param name="astar/time_resolution" value="0.8"/>
+        <param name="astar/lambda_heuristic" value="1.0"/>
+        <param name="astar/allocate_num" value="1000000"/>
 
         <param name="ground_height_threshold" value="9.0" />
         <param name="ground_to_air_transition_cost" value="0" />
@@ -57,11 +55,48 @@
         <!-- 9.0 / 100 / 1.0 / 1.0 High transition cost -->
         <!-- 9.0 / 0 / 2.0 No Air -->
         <!-- 9.0 / 0 / 1.0 / 2.0 Ideal -->
+
+        <param name="sdf_map/resolution"      value="0.1" /> 
+        <param name="sdf_map/map_size_x"   value="$(arg world_size_x)" /> 
+        <param name="sdf_map/map_size_y"   value="$(arg world_size_y)" /> 
+        <param name="sdf_map/map_size_z"   value="$(arg world_size_z)" /> 
+        <param name="sdf_map/local_update_range_x"  value="5.5" /> 
+        <param name="sdf_map/local_update_range_y"  value="5.5" /> 
+        <param name="sdf_map/local_update_range_z"  value="4.5" /> 
+        <param name="sdf_map/obstacles_inflation"     value="0.099" /> 
+        <param name="sdf_map/local_bound_inflate"    value="0.0"/>
+        <param name="sdf_map/local_map_margin" value="50"/>
+        <param name="sdf_map/ground_height"        value="-1.0"/>
+        <!-- camera parameter -->
+        <param name="sdf_map/cx" value="$(arg cx)"/>
+        <param name="sdf_map/cy" value="$(arg cy)"/>
+        <param name="sdf_map/fx" value="$(arg fx)"/>
+        <param name="sdf_map/fy" value="$(arg fy)"/>
+        <!-- depth filter -->
+        <param name="sdf_map/use_depth_filter" value="true"/>
+        <param name="sdf_map/depth_filter_tolerance" value="0.15"/>
+        <param name="sdf_map/depth_filter_maxdist"   value="5.0"/>
+        <param name="sdf_map/depth_filter_mindist"   value="0.2"/>
+        <param name="sdf_map/depth_filter_margin"    value="2"/>
+        <param name="sdf_map/k_depth_scaling_factor" value="1000.0"/>
+        <param name="sdf_map/skip_pixel" value="2"/>
+        <!-- local fusion -->
+        <param name="sdf_map/p_hit"  value="0.65"/>
+        <param name="sdf_map/p_miss" value="0.35"/>
+        <param name="sdf_map/p_min"  value="0.12"/>
+        <param name="sdf_map/p_max"  value="0.90"/>
+        <param name="sdf_map/p_occ"  value="0.80"/>
+        <param name="sdf_map/min_ray_length" value="0.5"/>
+        <param name="sdf_map/max_ray_length" value="4.5"/>
+
+        <param name="sdf_map/esdf_slice_height" value="0.3"/>
+        <param name="sdf_map/visualization_truncate_height"   value="2.49"/>
+        <param name="sdf_map/virtual_ceil_height"   value="2.5"/>
+        <param name="sdf_map/show_occ_time"  value="false"/>
+        <param name="sdf_map/show_esdf_time" value="false"/>
+        <param name="sdf_map/pose_type"     value="1"/>  
+        <param name="sdf_map/frame_id"      value="world"/>
     </node>
 
     <node pkg="rviz" name="rviz" type="rviz" args="-d $(find heuristic_planners)/rviz/planners.rviz"/>
-
-    <!-- <node pkg="rqt_service_caller" type="rqt_service_caller" name="rqt_service_caller"/> -->
-
-
 </launch>
