@@ -37,8 +37,8 @@ namespace Planners
         expanded_nodes_.clear();
         path_nodes_.clear();
       
-        std::priority_queue<NodePtr, std::vector<NodePtr>, NodeComparator> empty_queue;
-        open_set_.swap(empty_queue);
+        std::set<NodePtr, NodeComparator> empty_set;
+        open_set_.swap(empty_set);
       
         for (int i = 0; i < use_node_num_; i++) {
           NodePtr node = path_node_pool_[i];

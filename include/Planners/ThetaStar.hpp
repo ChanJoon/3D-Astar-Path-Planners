@@ -13,13 +13,9 @@ namespace Planners
 
     protected:
         void setParam();
-        virtual void UpdateVertex(Node *_s, Node *_s2, node_by_position &_index_by_pos);
-        inline virtual void ComputeCost(Node *_s_aux, Node *_s2_aux);
-        virtual void exploreNeighbours(Node* _current, const Eigen::Vector3d &_target,node_by_position &_index_by_pos) override;
 
-        inline void ComputeCost(NodePtr current, NodePtr neighbor, const Eigen::Vector3d& d_pos, const Eigen::Vector3d& target);
-        inline bool LineOfSight(const Eigen::Vector3d& start, const Eigen::Vector3d& end);
-        inline void UpdateVertex(NodePtr current, NodePtr neighbor, const Eigen::Vector3d& d_pos, const Eigen::Vector3d& target);
+        virtual inline void ComputeCost(NodePtr current, NodePtr neighbor, const Eigen::Vector3d& d_pos, const Eigen::Vector3d& target) override;
+        virtual inline void UpdateVertex(NodePtr current, NodePtr neighbor, const Eigen::Vector3d& d_pos, const Eigen::Vector3d& target) override;
 
     };
 }

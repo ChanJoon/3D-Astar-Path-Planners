@@ -17,7 +17,6 @@
 #include "utils/heuristic.hpp"
 #include "utils/time.hpp"
 #include "utils/utils.hpp"
-#include "utils/world.hpp"
 
 namespace Planners {
 using namespace utils;
@@ -34,6 +33,7 @@ class AlgorithmBase {
 
 //   void setEnvironment(const EDTEnvironment::Ptr &env);
   void setGridMap(GridMap::Ptr& grid_map);
+  virtual void setParam() = 0;
   void init();
   void reset();
   void setHeuristic(HeuristicFunction heuristic_);
@@ -41,7 +41,6 @@ class AlgorithmBase {
 
   bool detectCollision(Eigen::Vector3d &coordinates_);
 
-  // virtual PathData findPath(Eigen::Vector3d &_source, Eigen::Vector3d &_target) = 0;
   virtual PathData findPath(Eigen::Vector3d _source,
                             Eigen::Vector3d _target,
                             bool dynamic,
@@ -50,12 +49,6 @@ class AlgorithmBase {
   std::vector<NodePtr> getVisitedNodes();
 
  protected:
-  // virtual PathData createResultDataObject(const Node *_last,
-  //                                         utils::Clock &_timer,
-  //                                         const size_t _explored_nodes,
-  //                                         bool _solved,
-  //                                         const Eigen::Vector3d &_start,
-  //                                         const unsigned int _sight_checks);
   virtual PathData createResultDataObject(const Node0 *_last,
                                           utils::Clock &_timer,
                                           const size_t _explored_nodes,
@@ -66,15 +59,6 @@ class AlgorithmBase {
   HeuristicFunction heuristic;
 //   EDTEnvironment::Ptr edt_environment_;
   GridMap::Ptr grid_map_;
-  DiscreteWorld discrete_world_;
-  std::vector<Eigen::Vector3d> direction = {
-      {0, 1, 0},   {0, -1, 0}, {1, 0, 0},   {-1, 0, 0}, {0, 0, 1},    {0, 0, -1},  // 6 first
-                                                                                   // elements
-      {1, -1, 0},  {-1, 1, 0}, {-1, -1, 0}, {1, 1, 0},  {-1, 0, -1},  // 7-18 inclusive
-      {1, 0, 1},   {1, 0, -1}, {-1, 0, 1},  {0, -1, 1}, {0, 1, 1},    {0, 1, -1}, {0, -1, -1},
-      {-1, -1, 1}, {1, 1, 1},  {-1, 1, 1},  {1, -1, 1}, {-1, -1, -1}, {1, 1, -1}, {-1, 1, -1},
-      {1, -1, -1},
-  };
 
   double cost_weight_{0};
 
@@ -86,7 +70,8 @@ class AlgorithmBase {
   int iter_num_ = 0;
   NodeHashTable expanded_nodes_;
   NodeHashTable close_list_;
-  std::priority_queue<NodePtr, std::vector<NodePtr>, NodeComparator> open_set_;
+  // std::priority_queue<NodePtr, std::vector<NodePtr>, NodeComparator> open_set_;
+  std::set<NodePtr, NodeComparator> open_set_;
   std::vector<NodePtr> path_nodes_;
 
   /* ---------- variables ---------- */

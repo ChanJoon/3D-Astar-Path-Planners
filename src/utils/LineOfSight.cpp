@@ -6,6 +6,32 @@ namespace Planners
     {
         namespace LineOfSight
         {
+            bool fastLOS(const NodePtr& s_node, const NodePtr& e_node, const GridMap::Ptr& grid_map) {
+                Eigen::Vector3d start = s_node->position;
+                Eigen::Vector3d end = e_node->position;
+                const double distance = (end - start).norm();
+                
+                if (distance <= (1.73205080757 * 0.1)) {
+                    return true;
+                }
+                
+                Eigen::Vector3d direction = (end - start).normalized();
+                double step_size = std::min(0.1 / 2.0, distance / 10.0);
+                
+                double current_distance = step_size;
+                
+                while (current_distance < distance - step_size) {
+                    Eigen::Vector3d check_point = start + direction * current_distance;
+                    
+                    if (grid_map->getInflateOccupancy(check_point)) {
+                        return false;
+                    }
+                    
+                    current_distance += step_size;
+                }
+                
+                return true;
+            }
             bool bresenham3D(const Node *_lnode, const Node *_rnode, const GridMap::Ptr &_grid_map, std::shared_ptr<std::vector<Eigen::Vector3d>> _visited_nodes)
             {
                 return bresenham3D(_lnode->coordinates, _rnode->coordinates, _grid_map, _visited_nodes);
@@ -127,26 +153,6 @@ namespace Planners
                 }
 
                 return true;
-            }
-            bool bresenham3DWithMaxThreshold(const Node *_lnode, const Node *_rnode, const GridMap::Ptr &_grid_map, const unsigned int _threshold){
-                
-                if( utils::geometry::distanceBetween2Nodes(_lnode, _rnode) >= ( dist_scale_factor_ * _threshold ) ) //100 is because of the internal distance units
-                    return false;
-                
-                return bresenham3D(_lnode, _rnode, _grid_map);
-            }
-            int nodesInLineBetweenTwoNodes(const Node *_lnode, const Node *_rnode, const GridMap::Ptr &_grid_map, const unsigned int _threshold){
-                if( utils::geometry::distanceBetween2Nodes(_lnode, _rnode) >= ( dist_scale_factor_ * _threshold ) ){
-                    return 0;
-                }
-                std::shared_ptr<std::vector<Eigen::Vector3d>> nodes;
-                nodes.reset(new std::vector<Eigen::Vector3d>);
-
-                if(bresenham3D(_lnode, _rnode, _grid_map, nodes)){
-                    return nodes->size();
-                }else{
-                    return 0;
-                }
             }
         }
     }

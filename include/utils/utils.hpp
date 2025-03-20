@@ -1,16 +1,6 @@
 #ifndef UTILS_HPP
 #define UTILS_HPP
-/**
- * @file utils.hpp
- * @author Rafael Rey (reyarcenegui@gmail.com)
-* @author Jose Antonio Cobano (jacobsua@upo.es)
- * @brief A set of utils used alongside the project 
- * @version 0.1
- * @date 2021-06-29
- * 
- * @copyright Copyright (c) 2021
- * 
- */
+
 #include <iostream>
 #include <vector>
 #include <set>
@@ -58,7 +48,13 @@ typedef Node0 *NodePtr;
 
 class NodeComparator {
  public:
-  bool operator()(NodePtr node1, NodePtr node2) { return node1->f_score > node2->f_score; }
+  // bool operator()(NodePtr node1, NodePtr node2) { return node1->f_score > node2->f_score; }
+  bool operator()(const NodePtr& a, const NodePtr& b) const {
+    if (a->f_score != b->f_score) {
+        return a->f_score < b->f_score;
+    }
+    return a < b;
+  }
 };
 
 template <typename T>

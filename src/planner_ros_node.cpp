@@ -191,12 +191,15 @@ private:
         if( algorithm_name == "astar" ){
             ROS_INFO("Using A*");
             algorithm_.reset(new Planners::AStar());
+            algorithm_->setParam();
         }else if ( algorithm_name == "thetastar" ){
             ROS_INFO("Using Theta*");
             algorithm_.reset(new Planners::ThetaStar());
+            algorithm_->setParam();
         }else if ( algorithm_name == "thetastaragr" ){
             ROS_INFO("Using Air-Ground Robot Aware Theta*");
             algorithm_.reset(new Planners::ThetaStarAGR());
+            algorithm_->setParam();
         }else{
             ROS_WARN("Wrong algorithm name parameter. Using ASTAR by default");
             algorithm_.reset(new Planners::AStar());

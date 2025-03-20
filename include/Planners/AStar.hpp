@@ -19,18 +19,16 @@ namespace Planners{
         AStar(std::string _name);
         ~AStar();
 
+        void setParam() override;
         // PathData findPath(Eigen::Vector3d &_source, Eigen::Vector3d &_target) override;
-        PathData findPath(Eigen::Vector3d _source, Eigen::Vector3d _target, bool dynamic, double time_start) override;
-        inline void ComputeCost(NodePtr current, NodePtr neighbor, const Eigen::Vector3d& d_pos, const Eigen::Vector3d& target);
+        PathData findPath(Eigen::Vector3d _source, Eigen::Vector3d _target, bool dynamic, double time_start);
         
-    protected:
-        void setParam();
+        protected:
         void configAlgorithm();
-        virtual void exploreNeighbours(Node* _current, const Eigen::Vector3d &_target,node_by_position &_index_by_pos);
-        virtual unsigned int computeG(const Node* _current, Node* _suc, unsigned int _n_i, unsigned int _dirs);
         double getEuclHeu(Eigen::Vector3d x1, Eigen::Vector3d x2);
         double getDiagonalHeu(Eigen::Vector3d x1, Eigen::Vector3d x2);
-        inline void UpdateVertex(NodePtr current, NodePtr neighbor, const Eigen::Vector3d& d_pos, const Eigen::Vector3d& target);
+        virtual inline void ComputeCost(NodePtr current, NodePtr neighbor, const Eigen::Vector3d& d_pos, const Eigen::Vector3d& target);
+        virtual inline void UpdateVertex(NodePtr current, NodePtr neighbor, const Eigen::Vector3d& d_pos, const Eigen::Vector3d& target);
 
         unsigned int line_of_sight_checks_{0};
         std::vector<Node*> closedSet_;

@@ -2,145 +2,153 @@
 
 namespace Planners
 {
-    ThetaStarAGR::ThetaStarAGR() : ThetaStar("thetastaragr")
-    {
-        setParam();
-    }
+    ThetaStarAGR::ThetaStarAGR() : ThetaStar("thetastaragr") {}
         
-    ThetaStarAGR::ThetaStarAGR(std::string _name) : ThetaStar(_name)
-    {
-        setParam();
-    }
+    ThetaStarAGR::ThetaStarAGR(std::string _name) : ThetaStar(_name) {}
 
     void ThetaStarAGR::setParam() {
+        lnh_.param("thetastaragr/resolution", resolution_, -1.0);
+        lnh_.param("thetastaragr/time_resolution", time_resolution_, -1.0);
+        lnh_.param("thetastaragr/lambda_heuristic", lambda_heuristic_, -1.0);
+        lnh_.param("thetastaragr/allocate_num", allocate_num_, -1);
         lnh_.param("thetastaragr/ground_height_threshold", ground_height_threshold_, 5.0);
         lnh_.param("thetastaragr/ground_to_air_transition_cost", ground_to_air_transition_cost_, 0);
         lnh_.param("thetastaragr/air_movement_factor", air_movement_factor_, 2.0);
         lnh_.param("thetastaragr/flying_cost", flying_cost_, 10);
+        
+        ROS_INFO("thetastaragr/resolution: %f", resolution_);
+        ROS_INFO("thetastaragr/time_resolution: %f", time_resolution_);
+        ROS_INFO("thetastaragr/lambda_heuristic: %f", lambda_heuristic_);
+        ROS_INFO("thetastaragr/allocate_num: %d", allocate_num_);
+        ROS_INFO("thetastaragr/ground_height_threshold: %f", ground_height_threshold_);
+        ROS_INFO("thetastaragr/ground_to_air_transition_cost: %d", ground_to_air_transition_cost_);
+        ROS_INFO("thetastaragr/air_movement_factor: %f", air_movement_factor_);
+        ROS_INFO("thetastaragr/flying_cost: %d", flying_cost_);
+        tie_breaker_ = 1.0 + 1.0 / 10000;
     }
 
-    inline void ThetaStarAGR::ComputeCost(Node* _s_aux, Node* _s2_aux)
-    {
-        auto distanceParent2 = geometry::distanceBetween2Nodes(_s_aux->parent, _s2_aux);
-        line_of_sight_checks_++;
+    // inline void ThetaStarAGR::ComputeCost(Node* _s_aux, Node* _s2_aux)
+    // {
+    //     auto distanceParent2 = geometry::distanceBetween2Nodes(_s_aux->parent, _s2_aux);
+    //     line_of_sight_checks_++;
 
-        if (LineOfSight::bresenham3D(_s_aux->parent, _s2_aux, grid_map_))
-        {
-            // Determine ground/air modes based on z-coordinate
-            bool parent_is_ground = (_s_aux->parent->coordinates.z() < ground_height_threshold_);
-            bool s2_is_ground = (_s2_aux->coordinates.z() < ground_height_threshold_);
-            unsigned int transition_cost = 0;
-            unsigned int mode_factor = 1; // Default for 
-            unsigned int flying_cost = 0;
+    //     if (LineOfSight::bresenham3D(_s_aux->parent, _s2_aux, grid_map_))
+    //     {
+    //         // Determine ground/air modes based on z-coordinate
+    //         bool parent_is_ground = (_s_aux->parent->coordinates.z() < ground_height_threshold_);
+    //         bool s2_is_ground = (_s2_aux->coordinates.z() < ground_height_threshold_);
+    //         unsigned int transition_cost = 0;
+    //         unsigned int mode_factor = 1; // Default for 
+    //         unsigned int flying_cost = 0;
             
-            if (parent_is_ground && !s2_is_ground) {
-                transition_cost = ground_to_air_transition_cost_; // Only apply for ground-to-air
-                mode_factor = air_movement_factor_;
-            } else if (!parent_is_ground && !s2_is_ground) {
-                mode_factor = air_movement_factor_; // Air-to-air movement
-            }
-            if (!s2_is_ground) {
-                flying_cost = flying_cost_;
-            }
+    //         if (parent_is_ground && !s2_is_ground) {
+    //             transition_cost = ground_to_air_transition_cost_; // Only apply for ground-to-air
+    //             mode_factor = air_movement_factor_;
+    //         } else if (!parent_is_ground && !s2_is_ground) {
+    //             mode_factor = air_movement_factor_; // Air-to-air movement
+    //         }
+    //         if (!s2_is_ground) {
+    //             flying_cost = flying_cost_;
+    //         }
             
-            unsigned int total_cost = _s_aux->parent->G + (distanceParent2 * mode_factor) + transition_cost + flying_cost;
+    //         unsigned int total_cost = _s_aux->parent->G + (distanceParent2 * mode_factor) + transition_cost + flying_cost;
             
-            if (total_cost < _s2_aux->G)
-            {
-                _s2_aux->parent = _s_aux->parent;
-                _s2_aux->G = total_cost;
-                _s2_aux->gplush = _s2_aux->G + _s2_aux->H;
-            }
-        }
-        else
-        {
-            // No line of sight, use direct path from _s_aux to _s2_aux
-            auto distance2 = geometry::distanceBetween2Nodes(_s_aux, _s2_aux);
-            bool s_aux_is_ground = (_s_aux->coordinates.z() < ground_height_threshold_);
-            bool s2_is_ground = (_s2_aux->coordinates.z() < ground_height_threshold_);
-            unsigned int transition_cost = 0;
-            unsigned int mode_factor = 1;
-            unsigned int flying_cost = 0;
+    //         if (total_cost < _s2_aux->G)
+    //         {
+    //             _s2_aux->parent = _s_aux->parent;
+    //             _s2_aux->G = total_cost;
+    //             _s2_aux->gplush = _s2_aux->G + _s2_aux->H;
+    //         }
+    //     }
+    //     else
+    //     {
+    //         // No line of sight, use direct path from _s_aux to _s2_aux
+    //         auto distance2 = geometry::distanceBetween2Nodes(_s_aux, _s2_aux);
+    //         bool s_aux_is_ground = (_s_aux->coordinates.z() < ground_height_threshold_);
+    //         bool s2_is_ground = (_s2_aux->coordinates.z() < ground_height_threshold_);
+    //         unsigned int transition_cost = 0;
+    //         unsigned int mode_factor = 1;
+    //         unsigned int flying_cost = 0;
             
-            if (s_aux_is_ground && !s2_is_ground) {
-                transition_cost = ground_to_air_transition_cost_; // Only ground-to-air
-                mode_factor = air_movement_factor_;
-            } else if (!s_aux_is_ground && !s2_is_ground) {
-                mode_factor = air_movement_factor_; // Air-to-air
-            }
-            if (!s2_is_ground) {
-                flying_cost = flying_cost_;
-            }
+    //         if (s_aux_is_ground && !s2_is_ground) {
+    //             transition_cost = ground_to_air_transition_cost_; // Only ground-to-air
+    //             mode_factor = air_movement_factor_;
+    //         } else if (!s_aux_is_ground && !s2_is_ground) {
+    //             mode_factor = air_movement_factor_; // Air-to-air
+    //         }
+    //         if (!s2_is_ground) {
+    //             flying_cost = flying_cost_;
+    //         }
             
-            unsigned int total_cost = _s_aux->parent->G + (distance2 * mode_factor) + transition_cost + flying_cost;
+    //         unsigned int total_cost = _s_aux->parent->G + (distance2 * mode_factor) + transition_cost + flying_cost;
             
-            if (total_cost < _s2_aux->G)
-            {
-                _s2_aux->parent = _s_aux;
-                _s2_aux->G = total_cost;
-                _s2_aux->gplush = _s2_aux->G + _s2_aux->H;
-            }
-        }
-    }
+    //         if (total_cost < _s2_aux->G)
+    //         {
+    //             _s2_aux->parent = _s_aux;
+    //             _s2_aux->G = total_cost;
+    //             _s2_aux->gplush = _s2_aux->G + _s2_aux->H;
+    //         }
+    //     }
+    // }
     
-    inline unsigned int ThetaStarAGR::computeG(const Node* _current, Node* _suc, unsigned int _n_i, unsigned int _dirs)
-    {
-        unsigned int cost = _current->G;
+    // inline unsigned int ThetaStarAGR::computeG(const Node* _current, Node* _suc, unsigned int _n_i, unsigned int _dirs)
+    // {
+    //     unsigned int cost = _current->G;
         
-        // Base distance cost based on direction
-        if (_dirs == 8) {
-            cost += (_n_i < 4 ? dist_scale_factor_ : dd_2D_);
-        } else {
-            cost += (_n_i < 6 ? dist_scale_factor_ : (_n_i < 18 ? dd_2D_ : dd_3D_));
-        }
+    //     // Base distance cost based on direction
+    //     if (_dirs == 8) {
+    //         cost += (_n_i < 4 ? dist_scale_factor_ : dd_2D_);
+    //     } else {
+    //         cost += (_n_i < 6 ? dist_scale_factor_ : (_n_i < 18 ? dd_2D_ : dd_3D_));
+    //     }
         
-        // Apply mode-specific costs
-        bool current_is_ground = (_current->coordinates.z() < ground_height_threshold_);
-        bool suc_is_ground = (_suc->coordinates.z() < ground_height_threshold_);
-        unsigned int transition_cost = 0;
-        unsigned int mode_factor = 1;
-        unsigned int flying_cost = 0;
+    //     // Apply mode-specific costs
+    //     bool current_is_ground = (_current->coordinates.z() < ground_height_threshold_);
+    //     bool suc_is_ground = (_suc->coordinates.z() < ground_height_threshold_);
+    //     unsigned int transition_cost = 0;
+    //     unsigned int mode_factor = 1;
+    //     unsigned int flying_cost = 0;
         
-        if (current_is_ground && !suc_is_ground) {
-            transition_cost = ground_to_air_transition_cost_; // Only ground-to-air
-            mode_factor = air_movement_factor_;
-        } else if (!current_is_ground && !suc_is_ground) {
-            mode_factor = air_movement_factor_; // Air-to-air
-        }
-        if (!suc_is_ground) {
-            flying_cost = flying_cost_;
-        }
+    //     if (current_is_ground && !suc_is_ground) {
+    //         transition_cost = ground_to_air_transition_cost_; // Only ground-to-air
+    //         mode_factor = air_movement_factor_;
+    //     } else if (!current_is_ground && !suc_is_ground) {
+    //         mode_factor = air_movement_factor_; // Air-to-air
+    //     }
+    //     if (!suc_is_ground) {
+    //         flying_cost = flying_cost_;
+    //     }
         
-        cost = cost + (cost * (mode_factor - 1)) + transition_cost + flying_cost; // Adjust base cost with mode factor
-        _suc->C = transition_cost; // Store transition cost separately if needed
+    //     cost = cost + (cost * (mode_factor - 1)) + transition_cost + flying_cost; // Adjust base cost with mode factor
+    //     _suc->C = transition_cost; // Store transition cost separately if needed
         
-        return cost;
-    }
+    //     return cost;
+    // }
 
-    void ThetaStarAGR::exploreNeighbours(Node* _current, const Eigen::Vector3d &_target,node_by_position &_index_by_pos){
+    // void ThetaStarAGR::exploreNeighbours(Node* _current, const Eigen::Vector3d &_target,node_by_position &_index_by_pos){
 
-        for (unsigned int i = 0; i < direction.size(); ++i) {
+    //     for (unsigned int i = 0; i < direction.size(); ++i) {
 
-            Eigen::Vector3d newCoordinates = _current->coordinates + direction[i];
-            Node *successor = discrete_world_.getNodePtr(newCoordinates);
+    //         Eigen::Vector3d newCoordinates = _current->coordinates + direction[i];
+    //         Node *successor = discrete_world_.getNodePtr(newCoordinates);
 
-            if ( successor == nullptr || 
-                 successor->isInClosedList || 
-                 successor->occupied ||
-                 successor->coordinates.z() < 5) 
-                continue;
+    //         if ( successor == nullptr || 
+    //              successor->isInClosedList || 
+    //              successor->occupied ||
+    //              successor->coordinates.z() < 5) 
+    //             continue;
     
-            if (! successor->isInOpenList ) { 
+    //         if (! successor->isInOpenList ) { 
 
-                successor->parent = _current;
-                successor->G = computeG(_current, successor, i, direction.size());
-                successor->H = heuristic(successor->coordinates, _target);
-                successor->gplush = successor->G + successor->H;
-                successor->isInOpenList = true;
-                _index_by_pos.insert(successor);
-            }
+    //             successor->parent = _current;
+    //             successor->G = computeG(_current, successor, i, direction.size());
+    //             successor->H = heuristic(successor->coordinates, _target);
+    //             successor->gplush = successor->G + successor->H;
+    //             successor->isInOpenList = true;
+    //             _index_by_pos.insert(successor);
+    //         }
          
-            UpdateVertex(_current, successor, _index_by_pos); 
-        }
-    }
+    //         UpdateVertex(_current, successor, _index_by_pos); 
+    //     }
+    // }
 }

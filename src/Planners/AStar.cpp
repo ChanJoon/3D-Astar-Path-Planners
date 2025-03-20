@@ -1,15 +1,9 @@
 #include "Planners/AStar.hpp"
 
 namespace Planners {
-AStar::AStar(std::string _name = "astar") : AlgorithmBase(_name) {
-  setParam();
-  configAlgorithm();
-}
+AStar::AStar(std::string _name = "astar") : AlgorithmBase(_name) {}
 
-AStar::AStar() : AlgorithmBase("astar") {
-  setParam();
-  configAlgorithm();
-}
+AStar::AStar() : AlgorithmBase("astar") {}
 
 AStar::~AStar() {
   for (int i = 0; i < use_node_num_; i++) {
@@ -29,110 +23,6 @@ void AStar::setParam() {
   tie_breaker_ = 1.0 + 1.0 / 10000;
 }
 
-void AStar::configAlgorithm() {
-  closedSet_.reserve(50000);
-  openSet_.reserve(50000);
-}
-
-inline unsigned int AStar::computeG(const Node *_current,
-                                    Node *_suc,
-                                    unsigned int _n_i,
-                                    unsigned int _dirs) {
-  unsigned int cost = _current->G;
-
-  if (_dirs == 8) {
-    cost += (_n_i < 4 ? dist_scale_factor_ : dd_2D_);  // This is more efficient
-  } else {
-    cost +=
-        (_n_i < 6 ? dist_scale_factor_ : (_n_i < 18 ? dd_2D_ : dd_3D_));  // This is more efficient
-  }
-
-  _suc->C = _suc->cost;
-
-  return cost;
-}
-
-#pragma GCC diagnostic pop
-
-void AStar::exploreNeighbours(Node *_current,
-                              const Eigen::Vector3d &_target,
-                              node_by_position &_index_by_pos) {
-  for (unsigned int i = 0; i < direction.size(); ++i) {
-    Eigen::Vector3d newCoordinates = _current->coordinates + direction[i];
-    Node *successor = discrete_world_.getNodePtr(newCoordinates);
-    // Skip the neighbour if it is not valid, occupied, or already in teh
-    // closed list
-    if (successor == nullptr || successor->isInClosedList || successor->occupied) continue;
-
-    unsigned int totalCost = computeG(_current, successor, i, direction.size());
-
-    if (!successor->isInOpenList) {
-      successor->parent = _current;
-      successor->G = totalCost;
-      successor->H = heuristic(successor->coordinates, _target);
-      successor->gplush = successor->G + successor->H;
-      successor->isInOpenList = true;
-      _index_by_pos.insert(successor);
-    } else if (totalCost < successor->G) {
-      successor->parent = _current;
-      successor->G = totalCost;
-      successor->gplush = successor->G + successor->H;
-      auto found = _index_by_pos.find(successor->world_index);
-      _index_by_pos.erase(found);
-      _index_by_pos.insert(successor);
-    }
-  }
-}
-// PathData AStar::findPath(Eigen::Vector3d &_source, Eigen::Vector3d &_target) {
-//   Node *current = nullptr;
-
-//   bool solved{false};
-
-//   discrete_world_.getNodePtr(_source)->parent = new Node(_source);
-//   discrete_world_.setOpenValue(_source, true);
-//   // Timer to record the execution time, not
-//   // really important
-//   utils::Clock main_timer;
-//   main_timer.tic();
-
-//   line_of_sight_checks_ = 0;
-
-//   node_by_cost &indexByCost = openSet_.get<IndexByCost>();
-//   node_by_position &indexByWorldPosition = openSet_.get<IndexByWorldPosition>();
-
-//   indexByCost.insert(discrete_world_.getNodePtr(_source));
-
-//   while (!indexByCost.empty()) {
-//     // Get the element at the start of the open set ordered by cost
-//     auto it = indexByCost.begin();
-//     current = *it;
-//     indexByCost.erase(indexByCost.begin());
-
-//     if (current->coordinates == _target) {
-//       solved = true;
-//       break;
-//     }
-
-//     closedSet_.push_back(current);
-//     // This flags are used to avoid search in the containers,
-//     // for speed reasons.
-//     current->isInOpenList = false;
-//     current->isInClosedList = true;
-
-//     exploreNeighbours(current, _target, indexByWorldPosition);
-//   }
-//   main_timer.toc();
-
-//   PathData result_data = createResultDataObject(
-//       current, main_timer, closedSet_.size(), solved, _source, line_of_sight_checks_);
-//   closedSet_.clear();
-//   openSet_.clear();
-//   delete discrete_world_.getNodePtr(_source)->parent;
-
-//   discrete_world_.resetWorld();
-//   return result_data;
-// }
-
 double AStar::getEuclHeu(Eigen::Vector3d x1, Eigen::Vector3d x2) {
   return tie_breaker_ * (x2 - x1).norm();
 }
@@ -147,12 +37,12 @@ double AStar::getDiagonalHeu(Eigen::Vector3d x1, Eigen::Vector3d x2) {
 }
 
 inline void AStar::ComputeCost(NodePtr current, NodePtr neighbor, const Eigen::Vector3d& d_pos, const Eigen::Vector3d& target) {
-  double direct_cost = d_pos.norm();
-  double new_g_score = current->g_score + direct_cost;
+  double new_g_score = current->g_score + d_pos.norm();
+  double new_f_score = new_g_score + lambda_heuristic_ * getEuclHeu(neighbor->position, target);
   
   neighbor->parent = current;
   neighbor->g_score = new_g_score;
-  neighbor->f_score = new_g_score + lambda_heuristic_ * getEuclHeu(neighbor->position, target);
+  neighbor->f_score = new_f_score;
 }
 
 inline void AStar::UpdateVertex(NodePtr current, NodePtr neighbor, const Eigen::Vector3d& d_pos, const Eigen::Vector3d& target) {
@@ -160,18 +50,12 @@ inline void AStar::UpdateVertex(NodePtr current, NodePtr neighbor, const Eigen::
   
   ComputeCost(current, neighbor, d_pos, target);
   
-  // If we found a better path
   if (neighbor->g_score < old_g_score) {
-    // If node is in open set but not at the top, we'd need to update its position
-    // Most priority queue implementations don't support this directly
-    // A common approach is to add the node again with updated cost
     if (neighbor->node_state == IN_OPEN_SET) {
-      // Note: This is a simplified approach. A real implementation might use a
-      // priority queue that supports decreasing key operations
-      open_set_.push(neighbor); 
+      open_set_.insert(neighbor); 
     } else {
       neighbor->node_state = IN_OPEN_SET;
-      open_set_.push(neighbor);
+      open_set_.insert(neighbor);
     }
   }
 }
@@ -182,6 +66,7 @@ PathData AStar::findPath(Eigen::Vector3d _source,
                          double time_start) {
   utils::Clock timer;
   timer.tic();
+  line_of_sight_checks_ = 0;
 
   /* ---------- initialize ---------- */
   NodePtr start_node = path_node_pool_[0];
@@ -191,7 +76,7 @@ PathData AStar::findPath(Eigen::Vector3d _source,
   start_node->f_score = lambda_heuristic_ * getEuclHeu(start_node->position, _target);
   start_node->node_state = IN_OPEN_SET;
 
-  open_set_.push(start_node);
+  open_set_.insert(start_node);
   use_node_num_ += 1;
 
   expanded_nodes_.insert(start_node->position, start_node);
@@ -202,8 +87,8 @@ PathData AStar::findPath(Eigen::Vector3d _source,
   /* ---------- search loop ---------- */
   while (!open_set_.empty()) {
     /* ---------- get lowest f_score node and pop node ---------- */
-    cur_node = open_set_.top();
-    open_set_.pop();
+    cur_node = *open_set_.begin();
+    open_set_.erase(open_set_.begin());
 
     /* ---------- determine termination ---------- */
 
@@ -215,13 +100,12 @@ PathData AStar::findPath(Eigen::Vector3d _source,
       terminate_node = cur_node;
       retrievePath(terminate_node);
 
-      return createResultDataObject(terminate_node, timer, use_node_num_, true, _source, 0);
+      return createResultDataObject(terminate_node, timer, use_node_num_, true, _source, line_of_sight_checks_);
     }
 
     /* ---------- add to close set ---------- */
     cur_node->node_state = IN_CLOSE_SET;
     iter_num_ += 1;
-    close_list_.insert(cur_node->position, cur_node);
 
     /* ---------- init neighbor expansion ---------- */
     Eigen::Vector3d cur_pos = cur_node->position;
@@ -252,12 +136,10 @@ PathData AStar::findPath(Eigen::Vector3d _source,
           }
 
           /* not in close set */
-          if (close_list_.find(neighbor_pos) != NULL) {
+          NodePtr neighbor_node = expanded_nodes_.find(neighbor_pos);
+          if (neighbor_node != NULL && neighbor_node->node_state == IN_CLOSE_SET) {
             continue;
           }
-          // if (neighbor_node != NULL && neighbor_node->node_state == IN_CLOSE_SET) {
-          //   continue;
-          // }
 
           // if (edt_environment_->sdf_map_->getInflateOccupancy(neighbor_pos) == true) {
           //   continue;
@@ -269,7 +151,6 @@ PathData AStar::findPath(Eigen::Vector3d _source,
             continue;
           }
 
-          NodePtr neighbor_node = expanded_nodes_.find(neighbor_pos);
 
           if (neighbor_node == NULL) {
             neighbor_node = path_node_pool_[use_node_num_];
@@ -282,11 +163,8 @@ PathData AStar::findPath(Eigen::Vector3d _source,
 
             if (use_node_num_ == allocate_num_) {
               std::cout << "run out of memory." << std::endl;
-              return createResultDataObject(cur_node, timer, use_node_num_, false, _source, 0);
+              return createResultDataObject(cur_node, timer, use_node_num_, false, _source, line_of_sight_checks_);
             }
-          }
-          if (neighbor_node->node_state == IN_CLOSE_SET) {
-            continue;
           }
           UpdateVertex(cur_node, neighbor_node, d_pos, _target);
         }
@@ -296,6 +174,6 @@ PathData AStar::findPath(Eigen::Vector3d _source,
   std::cout << "open set empty, no path!" << std::endl;
   std::cout << "use node num: " << use_node_num_ << std::endl;
   std::cout << "iter num: " << iter_num_ << std::endl;
-  return createResultDataObject(cur_node, timer, use_node_num_, false, _source, 0);
+  return createResultDataObject(cur_node, timer, use_node_num_, false, _source, line_of_sight_checks_);
 }
 }  // namespace Planners

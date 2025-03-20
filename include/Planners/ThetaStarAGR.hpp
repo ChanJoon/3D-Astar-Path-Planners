@@ -13,9 +13,9 @@ namespace Planners
         void setParam();
 
     protected:
-        inline void ComputeCost(Node* _s_aux, Node* _s2_aux) override;
-        inline unsigned int computeG(const Node* _current, Node* _suc, unsigned int _n_i, unsigned int _dirs) override;
-        void exploreNeighbours(Node* _current, const Eigen::Vector3d &_target, node_by_position &_index_by_pos) override;
+        // inline void ComputeCost(Node* _s_aux, Node* _s2_aux) override;
+        // inline unsigned int computeG(const Node* _current, Node* _suc, unsigned int _n_i, unsigned int _dirs) override;
+        // void exploreNeighbours(Node* _current, const Eigen::Vector3d &_target, node_by_position &_index_by_pos) override;
 
         // Configuration parameters
         double ground_height_threshold_{9.0};           // z < 5.0 is ground
