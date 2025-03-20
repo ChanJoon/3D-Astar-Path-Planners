@@ -17,7 +17,7 @@
 #include <Eigen/Dense>
 #include "utils/utils.hpp"
 #include "utils/LineOfSight.hpp"
-#include "plan_env/edt_environment.h"
+// #include "plan_env/edt_environment.h"
 
 
 namespace Planners
@@ -28,7 +28,7 @@ namespace Planners
         {
             float calculatePathLength(const std::vector<Eigen::Vector3d> &_path, const double &_resolution);
 
-            std::vector<Eigen::Vector3d> getAdjacentPath(const std::vector<Eigen::Vector3d> &_path, const EDTEnvironment::Ptr &_edt_env);
+            // std::vector<Eigen::Vector3d> getAdjacentPath(const std::vector<Eigen::Vector3d> &_path, const EDTEnvironment::Ptr &_edt_env);
 
             unsigned int distanceBetween2Nodes(const Node &_n1, const Node &_n2);
 

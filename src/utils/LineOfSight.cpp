@@ -6,15 +6,15 @@ namespace Planners
     {
         namespace LineOfSight
         {
-            bool bresenham3D(const Node *_lnode, const Node *_rnode, const EDTEnvironment::Ptr &_edt_env, std::shared_ptr<std::vector<Eigen::Vector3d>> _visited_nodes)
+            bool bresenham3D(const Node *_lnode, const Node *_rnode, const GridMap::Ptr &_grid_map, std::shared_ptr<std::vector<Eigen::Vector3d>> _visited_nodes)
             {
-                return bresenham3D(_lnode->coordinates, _rnode->coordinates, _edt_env, _visited_nodes);
+                return bresenham3D(_lnode->coordinates, _rnode->coordinates, _grid_map, _visited_nodes);
             }
-            bool bresenham3D(const Node0 *_lnode, const Node0 *_rnode, const EDTEnvironment::Ptr &_edt_env, std::shared_ptr<std::vector<Eigen::Vector3d>> _visited_nodes)
+            bool bresenham3D(const Node0 *_lnode, const Node0 *_rnode, const GridMap::Ptr &_grid_map, std::shared_ptr<std::vector<Eigen::Vector3d>> _visited_nodes)
             {
-                return bresenham3D(_lnode->position, _rnode->position, _edt_env, _visited_nodes);
+                return bresenham3D(_lnode->position, _rnode->position, _grid_map, _visited_nodes);
             }
-            bool bresenham3D(const Eigen::Vector3d _lnode, const Eigen::Vector3d _rnode, const EDTEnvironment::Ptr &_edt_env, std::shared_ptr<std::vector<Eigen::Vector3d>> _visited_nodes)
+            bool bresenham3D(const Eigen::Vector3d _lnode, const Eigen::Vector3d _rnode, const GridMap::Ptr &_grid_map, std::shared_ptr<std::vector<Eigen::Vector3d>> _visited_nodes)
             {
                 // if( geometry::distanceBetween2Nodes(_lnode, _rnode) <= dd_3D_ )
                 //     return true;
@@ -54,7 +54,9 @@ namespace Planners
                         //Check if visitor is occupied and add visitor
                         // if (_edt_env->sdf_map_->getInflateOccupancy(vec0) == 1)
                         //     return false;
-                        if (_edt_env->evaluateCoarseEDT(vec0, -1.0) <= 0.3)
+                        // if (_edt_env->evaluateCoarseEDT(vec0, -1.0) <= 0.3)
+                        //     return false;
+                        if (_grid_map->getInflateOccupancy(vec0) == true)
                             return false;
                         if ( _visited_nodes != nullptr )
                             _visited_nodes->push_back(vec0);
@@ -84,7 +86,9 @@ namespace Planners
                         //Check if visitor is occupied and add visitor
                         // if (_edt_env->sdf_map_->getInflateOccupancy(vec0) == 1)
                         //     return false;
-                        if (_edt_env->evaluateCoarseEDT(vec0, -1.0) <= 0.3)
+                        // if (_edt_env->evaluateCoarseEDT(vec0, -1.0) <= 0.3)
+                        //     return false;
+                        if (_grid_map->getInflateOccupancy(vec0) == true)
                             return false;
                         if ( _visited_nodes != nullptr )
                           _visited_nodes->push_back(vec0);
@@ -113,7 +117,9 @@ namespace Planners
                         //Check if visitor is occupied and add visitor
                         // if (_edt_env->sdf_map_->getInflateOccupancy(vec0) == 1)
                         //     return false;
-                        if (_edt_env->evaluateCoarseEDT(vec0, -1.0) <= 0.3)
+                        // if (_edt_env->evaluateCoarseEDT(vec0, -1.0) <= 0.3)
+                        //     return false;
+                        if (_grid_map->getInflateOccupancy(vec0) == true)
                             return false;
                         if ( _visited_nodes != nullptr )
                             _visited_nodes->push_back(vec0);
@@ -122,21 +128,21 @@ namespace Planners
 
                 return true;
             }
-            bool bresenham3DWithMaxThreshold(const Node *_lnode, const Node *_rnode, const EDTEnvironment::Ptr &_edt_env, const unsigned int _threshold){
+            bool bresenham3DWithMaxThreshold(const Node *_lnode, const Node *_rnode, const GridMap::Ptr &_grid_map, const unsigned int _threshold){
                 
                 if( utils::geometry::distanceBetween2Nodes(_lnode, _rnode) >= ( dist_scale_factor_ * _threshold ) ) //100 is because of the internal distance units
                     return false;
                 
-                return bresenham3D(_lnode, _rnode, _edt_env);
+                return bresenham3D(_lnode, _rnode, _grid_map);
             }
-            int nodesInLineBetweenTwoNodes(const Node *_lnode, const Node *_rnode, const EDTEnvironment::Ptr &_edt_env, const unsigned int _threshold){
+            int nodesInLineBetweenTwoNodes(const Node *_lnode, const Node *_rnode, const GridMap::Ptr &_grid_map, const unsigned int _threshold){
                 if( utils::geometry::distanceBetween2Nodes(_lnode, _rnode) >= ( dist_scale_factor_ * _threshold ) ){
                     return 0;
                 }
                 std::shared_ptr<std::vector<Eigen::Vector3d>> nodes;
                 nodes.reset(new std::vector<Eigen::Vector3d>);
 
-                if(bresenham3D(_lnode, _rnode, _edt_env, nodes)){
+                if(bresenham3D(_lnode, _rnode, _grid_map, nodes)){
                     return nodes->size();
                 }else{
                     return 0;

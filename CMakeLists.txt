@@ -85,10 +85,13 @@ add_library(AStar                  src/Planners/AStar.cpp
 add_library(ThetaStar          src/Planners/ThetaStar.cpp )
 add_library(ThetaStarAGR        src/Planners/ThetaStarAGR.cpp )
 
-add_library(PlanEnv            src/plan_env/edt_environment.cpp
-                               src/plan_env/obj_predictor.cpp
-                               src/plan_env/raycast.cpp
-                               src/plan_env/sdf_map.cpp)
+add_library(PlanEnv
+  # src/plan_env/edt_environment.cpp
+  src/plan_env/obj_predictor.cpp
+  src/plan_env/raycast.cpp
+  # src/plan_env/sdf_map.cpp
+  src/plan_env/grid_map.cpp
+)
 target_link_libraries(PlanEnv
   ${catkin_LIBRARIES}
   ${PCL_LIBRARIES}

@@ -83,55 +83,55 @@ void AStar::exploreNeighbours(Node *_current,
     }
   }
 }
-PathData AStar::findPath(Eigen::Vector3d &_source, Eigen::Vector3d &_target) {
-  Node *current = nullptr;
+// PathData AStar::findPath(Eigen::Vector3d &_source, Eigen::Vector3d &_target) {
+//   Node *current = nullptr;
 
-  bool solved{false};
+//   bool solved{false};
 
-  discrete_world_.getNodePtr(_source)->parent = new Node(_source);
-  discrete_world_.setOpenValue(_source, true);
-  // Timer to record the execution time, not
-  // really important
-  utils::Clock main_timer;
-  main_timer.tic();
+//   discrete_world_.getNodePtr(_source)->parent = new Node(_source);
+//   discrete_world_.setOpenValue(_source, true);
+//   // Timer to record the execution time, not
+//   // really important
+//   utils::Clock main_timer;
+//   main_timer.tic();
 
-  line_of_sight_checks_ = 0;
+//   line_of_sight_checks_ = 0;
 
-  node_by_cost &indexByCost = openSet_.get<IndexByCost>();
-  node_by_position &indexByWorldPosition = openSet_.get<IndexByWorldPosition>();
+//   node_by_cost &indexByCost = openSet_.get<IndexByCost>();
+//   node_by_position &indexByWorldPosition = openSet_.get<IndexByWorldPosition>();
 
-  indexByCost.insert(discrete_world_.getNodePtr(_source));
+//   indexByCost.insert(discrete_world_.getNodePtr(_source));
 
-  while (!indexByCost.empty()) {
-    // Get the element at the start of the open set ordered by cost
-    auto it = indexByCost.begin();
-    current = *it;
-    indexByCost.erase(indexByCost.begin());
+//   while (!indexByCost.empty()) {
+//     // Get the element at the start of the open set ordered by cost
+//     auto it = indexByCost.begin();
+//     current = *it;
+//     indexByCost.erase(indexByCost.begin());
 
-    if (current->coordinates == _target) {
-      solved = true;
-      break;
-    }
+//     if (current->coordinates == _target) {
+//       solved = true;
+//       break;
+//     }
 
-    closedSet_.push_back(current);
-    // This flags are used to avoid search in the containers,
-    // for speed reasons.
-    current->isInOpenList = false;
-    current->isInClosedList = true;
+//     closedSet_.push_back(current);
+//     // This flags are used to avoid search in the containers,
+//     // for speed reasons.
+//     current->isInOpenList = false;
+//     current->isInClosedList = true;
 
-    exploreNeighbours(current, _target, indexByWorldPosition);
-  }
-  main_timer.toc();
+//     exploreNeighbours(current, _target, indexByWorldPosition);
+//   }
+//   main_timer.toc();
 
-  PathData result_data = createResultDataObject(
-      current, main_timer, closedSet_.size(), solved, _source, line_of_sight_checks_);
-  closedSet_.clear();
-  openSet_.clear();
-  delete discrete_world_.getNodePtr(_source)->parent;
+//   PathData result_data = createResultDataObject(
+//       current, main_timer, closedSet_.size(), solved, _source, line_of_sight_checks_);
+//   closedSet_.clear();
+//   openSet_.clear();
+//   delete discrete_world_.getNodePtr(_source)->parent;
 
-  discrete_world_.resetWorld();
-  return result_data;
-}
+//   discrete_world_.resetWorld();
+//   return result_data;
+// }
 
 double AStar::getEuclHeu(Eigen::Vector3d x1, Eigen::Vector3d x2) {
   return tie_breaker_ * (x2 - x1).norm();
@@ -244,7 +244,10 @@ PathData AStar::findPath(Eigen::Vector3d _source,
           //     neighbor_pos(2) <= origin_(2) || neighbor_pos(2) >= map_size_3d_(2)) {
           //   continue;
           // }
-          if (edt_environment_->sdf_map_->isInMap(neighbor_pos) == false) {
+          // if (edt_environment_->sdf_map_->isInMap(neighbor_pos) == false) {
+          //   continue;
+          // }
+          if (grid_map_->isInMap(neighbor_pos) == false) {
             continue;
           }
 
@@ -259,7 +262,10 @@ PathData AStar::findPath(Eigen::Vector3d _source,
           // if (edt_environment_->sdf_map_->getInflateOccupancy(neighbor_pos) == true) {
           //   continue;
           // }
-          if (edt_environment_->evaluateCoarseEDT(neighbor_pos, -1.0) <= 0.3) {
+          // if (edt_environment_->evaluateCoarseEDT(neighbor_pos, -1.0) <= 0.3) {
+          //   continue;
+          // }
+          if (grid_map_->getInflateOccupancy(neighbor_pos) == true) {
             continue;
           }
 

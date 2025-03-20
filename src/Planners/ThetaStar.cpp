@@ -35,7 +35,7 @@ namespace Planners
     {
         auto distanceParent2 = geometry::distanceBetween2Nodes(_s_aux->parent, _s2_aux);
         line_of_sight_checks_++;
-        if (LineOfSight::bresenham3D(_s_aux->parent, _s2_aux, edt_environment_))
+        if (LineOfSight::bresenham3D(_s_aux->parent, _s2_aux, grid_map_))
         {
             if ((_s_aux->parent->G + distanceParent2) < _s2_aux->G)
             {
@@ -123,7 +123,11 @@ namespace Planners
             // {
             //     return false;
             // }
-            if (edt_environment_->evaluateCoarseEDT(point, -1.0) <= 0.3)
+            // if (edt_environment_->evaluateCoarseEDT(point, -1.0) <= 0.3)
+            // {
+            //     return false;
+            // }
+            if (grid_map_->getInflateOccupancy(point))
             {
                 return false;
             }

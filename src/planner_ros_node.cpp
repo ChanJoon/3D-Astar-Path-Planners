@@ -7,7 +7,7 @@
 #include "utils/geometry_utils.hpp"
 #include "utils/metrics.hpp"
 
-#include "plan_env/edt_environment.h"
+// #include "plan_env/edt_environment.h"
 
 #include <ros/ros.h>
 
@@ -45,7 +45,7 @@ public:
         global_path_pub_ = lnh_.advertise<nav_msgs::Path>("global_path", 1);
         
     }
-    EDTEnvironment::Ptr edt_environment_;
+    // EDTEnvironment::Ptr edt_environment_;
 
 private:
 
@@ -87,7 +87,8 @@ private:
         }
 
         Eigen::Vector3d origin, size;
-        sdf_map_->getRegion(origin, size);
+        // sdf_map_->getRegion(origin, size);
+        grid_map_->getRegion(origin, size);
         auto isWithinBounds = [&origin, &size](Eigen::Vector3d &pos){
             return (pos.x() >= origin.x() && pos.y() >= origin.y() && pos.z() >= origin.z() &&
                     pos.x() <= size.x() && pos.y() <= size.y() && pos.z() <= size.z());
@@ -203,12 +204,16 @@ private:
 
         configureHeuristic(_heuristic);
 
-        sdf_map_.reset(new SDFMap);
-        sdf_map_->initMap(lnh_);
-        edt_environment_.reset(new EDTEnvironment);
-        edt_environment_->setMap(sdf_map_);
+        // sdf_map_.reset(new SDFMap);
+        // sdf_map_->initMap(lnh_);
+        // edt_environment_.reset(new EDTEnvironment);
+        // edt_environment_->setMap(sdf_map_);
 
-        algorithm_->setEnvironment(edt_environment_);
+        grid_map_.reset(new GridMap);
+        grid_map_->initMap(lnh_);
+        algorithm_->setGridMap(grid_map_);
+
+        // algorithm_->setEnvironment(edt_environment_);
         algorithm_->init();
         
         std::string frame_id;
@@ -319,7 +324,8 @@ private:
     ros::ServiceServer request_path_server_, change_planner_server_;
     ros::Publisher line_markers_pub_, point_markers_pub_, global_path_pub_;
 
-    SDFMap::Ptr sdf_map_;
+    // SDFMap::Ptr sdf_map_;
+    GridMap::Ptr grid_map_;
 
     std::unique_ptr<Planners::AlgorithmBase> algorithm_;
         

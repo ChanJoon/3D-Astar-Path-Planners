@@ -24,7 +24,7 @@ namespace Planners
         auto distanceParent2 = geometry::distanceBetween2Nodes(_s_aux->parent, _s2_aux);
         line_of_sight_checks_++;
 
-        if (LineOfSight::bresenham3D(_s_aux->parent, _s2_aux, edt_environment_))
+        if (LineOfSight::bresenham3D(_s_aux->parent, _s2_aux, grid_map_))
         {
             // Determine ground/air modes based on z-coordinate
             bool parent_is_ground = (_s_aux->parent->coordinates.z() < ground_height_threshold_);

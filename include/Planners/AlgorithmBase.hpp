@@ -10,7 +10,8 @@
 
 #include <boost/functional/hash.hpp>
 
-#include "plan_env/edt_environment.h"
+// #include "plan_env/edt_environment.h"
+#include "plan_env/grid_map.h"
 #include "utils/LineOfSight.hpp"
 #include "utils/geometry_utils.hpp"
 #include "utils/heuristic.hpp"
@@ -31,7 +32,8 @@ class AlgorithmBase {
 
   enum { REACH_HORIZON = 1, REACH_END = 2, NO_PATH = 3, NEAR_END = 4 };
 
-  void setEnvironment(const EDTEnvironment::Ptr &env);
+//   void setEnvironment(const EDTEnvironment::Ptr &env);
+  void setGridMap(GridMap::Ptr& grid_map);
   void init();
   void reset();
   void setHeuristic(HeuristicFunction heuristic_);
@@ -39,7 +41,7 @@ class AlgorithmBase {
 
   bool detectCollision(Eigen::Vector3d &coordinates_);
 
-  virtual PathData findPath(Eigen::Vector3d &_source, Eigen::Vector3d &_target) = 0;
+  // virtual PathData findPath(Eigen::Vector3d &_source, Eigen::Vector3d &_target) = 0;
   virtual PathData findPath(Eigen::Vector3d _source,
                             Eigen::Vector3d _target,
                             bool dynamic,
@@ -48,12 +50,12 @@ class AlgorithmBase {
   std::vector<NodePtr> getVisitedNodes();
 
  protected:
-  virtual PathData createResultDataObject(const Node *_last,
-                                          utils::Clock &_timer,
-                                          const size_t _explored_nodes,
-                                          bool _solved,
-                                          const Eigen::Vector3d &_start,
-                                          const unsigned int _sight_checks);
+  // virtual PathData createResultDataObject(const Node *_last,
+  //                                         utils::Clock &_timer,
+  //                                         const size_t _explored_nodes,
+  //                                         bool _solved,
+  //                                         const Eigen::Vector3d &_start,
+  //                                         const unsigned int _sight_checks);
   virtual PathData createResultDataObject(const Node0 *_last,
                                           utils::Clock &_timer,
                                           const size_t _explored_nodes,
@@ -62,7 +64,8 @@ class AlgorithmBase {
                                           const unsigned int _sight_checks);
 
   HeuristicFunction heuristic;
-  EDTEnvironment::Ptr edt_environment_;
+//   EDTEnvironment::Ptr edt_environment_;
+  GridMap::Ptr grid_map_;
   DiscreteWorld discrete_world_;
   std::vector<Eigen::Vector3d> direction = {
       {0, 1, 0},   {0, -1, 0}, {1, 0, 0},   {-1, 0, 0}, {0, 0, 1},    {0, 0, -1},  // 6 first

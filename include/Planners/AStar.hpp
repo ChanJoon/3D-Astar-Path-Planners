@@ -19,7 +19,7 @@ namespace Planners{
         AStar(std::string _name);
         ~AStar();
 
-        PathData findPath(Eigen::Vector3d &_source, Eigen::Vector3d &_target) override;
+        // PathData findPath(Eigen::Vector3d &_source, Eigen::Vector3d &_target) override;
         PathData findPath(Eigen::Vector3d _source, Eigen::Vector3d _target, bool dynamic, double time_start) override;
         inline void ComputeCost(NodePtr current, NodePtr neighbor, const Eigen::Vector3d& d_pos, const Eigen::Vector3d& target);
         

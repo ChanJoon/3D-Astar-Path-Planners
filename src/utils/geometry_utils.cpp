@@ -50,33 +50,33 @@ namespace Planners
             {
                 return { std::abs(_vec.x()), std::abs(_vec.y()), std::abs(_vec.z()) };
             }
-            std::vector<Eigen::Vector3d> getAdjacentPath(const std::vector<Eigen::Vector3d> &_path, const EDTEnvironment::Ptr &_edt_env){
+            // std::vector<Eigen::Vector3d> getAdjacentPath(const std::vector<Eigen::Vector3d> &_path, const EDTEnvironment::Ptr &_edt_env){
         
-                if( _path.size() == 0)
-                    return {};
+            //     if( _path.size() == 0)
+            //         return {};
 
-                std::vector<Eigen::Vector3d> adjacent_path;
-                adjacent_path.push_back(_path[0]);
+            //     std::vector<Eigen::Vector3d> adjacent_path;
+            //     adjacent_path.push_back(_path[0]);
         
-                std::shared_ptr<std::vector<Eigen::Vector3d>> visited_nodes;
-                visited_nodes.reset(new std::vector<Eigen::Vector3d>);
+            //     std::shared_ptr<std::vector<Eigen::Vector3d>> visited_nodes;
+            //     visited_nodes.reset(new std::vector<Eigen::Vector3d>);
 
-                for(size_t i = 0; i < _path.size() -1 ; ++i){
-                    utils::LineOfSight::bresenham3D(_path[i], _path[i+1], _edt_env, visited_nodes);
+            //     for(size_t i = 0; i < _path.size() -1 ; ++i){
+            //         utils::LineOfSight::bresenham3D(_path[i], _path[i+1], _edt_env, visited_nodes);
 
-                if(visited_nodes->size() > 0){
-                    for(auto &it: *visited_nodes)
-                        adjacent_path.push_back(it);
+            //     if(visited_nodes->size() > 0){
+            //         for(auto &it: *visited_nodes)
+            //             adjacent_path.push_back(it);
                 
-                }else if( i != 0) {
-                    adjacent_path.push_back(_path[i]);
-                }
+            //     }else if( i != 0) {
+            //         adjacent_path.push_back(_path[i]);
+            //     }
             
-                    visited_nodes.reset(new std::vector<Eigen::Vector3d>);
-                }
+            //         visited_nodes.reset(new std::vector<Eigen::Vector3d>);
+            //     }
 
-                return adjacent_path;
-            }
+            //     return adjacent_path;
+            // }
 
             inline double moduleVector(const Eigen::Vector3i &_v){
                 return _v.norm();
