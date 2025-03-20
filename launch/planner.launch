@@ -45,6 +45,10 @@
         <param name="astar/time_resolution" value="0.8"/>
         <param name="astar/lambda_heuristic" value="5.0"/>
         <param name="astar/allocate_num" value="1000000"/>
+        <param name="thetastar/resolution" value="0.1"/>
+        <param name="thetastar/time_resolution" value="0.8"/>
+        <param name="thetastar/lambda_heuristic" value="5.0"/>
+        <param name="thetastar/allocate_num" value="1000000"/>
 
         <param name="thetastaragr/ground_height_threshold" value="9.0" />
         <param name="thetastaragr/ground_to_air_transition_cost" value="0" />

@@ -2,15 +2,25 @@
 
 namespace Planners
 {
-    ThetaStar::ThetaStar() : AStar("thetastar") {}
+    ThetaStar::ThetaStar() : AStar("thetastar") {
+        setParam();
+    }
 
     ThetaStar::ThetaStar(std::string _name = "thetastar") : AStar(_name)
     {
-        checked_nodes.reset(new std::vector<Eigen::Vector3d>);
-        checked_nodes_current.reset(new std::vector<Eigen::Vector3d>);
+        setParam();
+    }
 
-        checked_nodes->reserve(5000);
-        checked_nodes_current->reserve(5000);
+    void ThetaStar::setParam() {
+        lnh_.param("thetastar/resolution", resolution_, -1.0);
+        lnh_.param("thetastar/time_resolution", time_resolution_, -1.0);
+        lnh_.param("thetastar/lambda_heuristic", lambda_heuristic_, -1.0);
+        lnh_.param("thetastar/allocate_num", allocate_num_, -1);
+        ROS_INFO("thetastar/resolution: %f", resolution_);
+        ROS_INFO("thetastar/time_resolution: %f", time_resolution_);
+        ROS_INFO("thetastar/lambda_heuristic: %f", lambda_heuristic_);
+        ROS_INFO("thetastar/allocate_num: %d", allocate_num_);
+        tie_breaker_ = 1.0 + 1.0 / 10000;
     }
 
     inline void ThetaStar::UpdateVertex(Node *_s, Node *_s2, node_by_position &_index_by_pos)
@@ -143,7 +153,8 @@ namespace Planners
         bool path_changed = false;
 
         // Theta* core difference: Check if we can connect neighbor to current's parent
-        if (current->parent != NULL && LineOfSight(current->parent->position, neighbor->position))
+        // if (current->parent != NULL && LineOfSight(current->parent->position, neighbor->position))
+        if (current->parent != NULL && LineOfSight::bresenham3D(current->parent, neighbor, grid_map_))
         {
             // If line of sight exists, we can create a direct path
             double direct_cost = (neighbor->position - current->parent->position).norm();
