@@ -20,8 +20,7 @@ namespace Planners{
         ~AStar();
 
         void setParam() override;
-        // PathData findPath(Eigen::Vector3d &_source, Eigen::Vector3d &_target) override;
-        PathData findPath(Eigen::Vector3d _source, Eigen::Vector3d _target, bool dynamic, double time_start);
+        virtual inline PathData findPath(Eigen::Vector3d _source, Eigen::Vector3d _target, bool dynamic, double time_start);
         
         protected:
         void configAlgorithm();
@@ -31,8 +30,6 @@ namespace Planners{
         virtual inline void UpdateVertex(NodePtr current, NodePtr neighbor, const Eigen::Vector3d& d_pos, const Eigen::Vector3d& target);
 
         unsigned int line_of_sight_checks_{0};
-        std::vector<Node*> closedSet_;
-        MagicalMultiSet openSet_;
         
         ros::NodeHandle lnh_{"~"};
     };

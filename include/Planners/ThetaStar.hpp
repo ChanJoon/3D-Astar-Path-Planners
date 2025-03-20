@@ -11,12 +11,10 @@ namespace Planners
         ThetaStar();
         ThetaStar(std::string _name);
 
-    protected:
         void setParam();
-
+    protected:
         virtual inline void ComputeCost(NodePtr current, NodePtr neighbor, const Eigen::Vector3d& d_pos, const Eigen::Vector3d& target) override;
         virtual inline void UpdateVertex(NodePtr current, NodePtr neighbor, const Eigen::Vector3d& d_pos, const Eigen::Vector3d& target) override;
-
     };
 }
 

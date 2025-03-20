@@ -25,9 +25,12 @@ class Node0 {
   /* -------------------- */
   Eigen::Vector3i index;
   Eigen::Vector3d position;
-  double g_score, f_score;
+  double g_score, f_score, penalty_g_score;
   Node0 *parent;
   char node_state;
+
+  int motion_state {0};
+  int ground_penalty_flag {0};
 
   // kinodynamic
   Eigen::Matrix<double, 6, 1> state;

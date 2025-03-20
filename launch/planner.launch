@@ -10,6 +10,8 @@
     <arg name="resolution"          default="0.1"/>
     <arg name="marker_scale"        default="0.1"/>
 
+    <arg name="ground_height"       default="0.1"/>
+
     <!-- Possibles values are: euclidean, euclidean_optimized, manhattan, octogonal and dijkstra -->
     <arg name="heuristic"         default="euclidean"/>
 
@@ -55,10 +57,12 @@
         <param name="thetastaragr/time_resolution" value="0.8"/>
         <param name="thetastaragr/lambda_heuristic" value="5.0"/>
         <param name="thetastaragr/allocate_num" value="1000000"/>
-        <param name="thetastaragr/ground_height_threshold" value="9.0" />
-        <param name="thetastaragr/ground_to_air_transition_cost" value="0" />
-        <param name="thetastaragr/air_movement_factor" value="1.0" />
-        <param name="thetastaragr/flying_cost" value="2.0" />
+
+        <param name="thetastaragr/weight_goal" value="1" />
+        <param name="thetastaragr/flying_cost" value="20" />
+        <param name="thetastaragr/flying_cost_default" value="10" />
+
+        <param name="thetastaragr/ground_judge" value="$(arg ground_height)" />
         <!-- 9.0 / 100 / 1.0 / 1.0 High transition cost -->
         <!-- 9.0 / 0 / 2.0 No Air -->
         <!-- 9.0 / 0 / 1.0 / 2.0 Ideal -->
@@ -79,7 +83,7 @@
         <param name="sdf_map/obstacles_inflation"     value="0.099" /> 
         <param name="sdf_map/local_bound_inflate"    value="0.0"/>
         <param name="sdf_map/local_map_margin" value="50"/>
-        <param name="sdf_map/ground_height"        value="0.0"/>
+        <param name="sdf_map/ground_height"        value="$(arg ground_height)"/>
         <!-- camera parameter -->
         <param name="sdf_map/cx" value="$(arg cx)"/>
         <param name="sdf_map/cy" value="$(arg cy)"/>
@@ -123,7 +127,7 @@
         <param name="grid_map/local_update_range_z" value="10.0" />
         <param name="grid_map/obstacles_inflation" value="0.099" />
         <param name="grid_map/local_map_margin" value="30" />
-        <param name="grid_map/ground_height" value="-0.01" />
+        <param name="grid_map/ground_height" value="$(arg ground_height)" />
 
         <!-- camera parameter -->
         <param name="grid_map/cx" value="321.04638671875" />
