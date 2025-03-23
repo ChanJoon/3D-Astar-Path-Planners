@@ -42,9 +42,7 @@ class AlgorithmBase {
   bool detectCollision(Eigen::Vector3d &coordinates_);
 
   virtual PathData findPath(Eigen::Vector3d _source,
-                            Eigen::Vector3d _target,
-                            bool dynamic,
-                            double time_start) = 0;
+                            Eigen::Vector3d _target) = 0;
   std::vector<Eigen::Vector3d> getPath();
   std::vector<NodePtr> getVisitedNodes();
 

@@ -61,9 +61,7 @@ inline void AStar::UpdateVertex(NodePtr current, NodePtr neighbor, const Eigen::
 }
 
 PathData AStar::findPath(Eigen::Vector3d _source,
-                         Eigen::Vector3d _target,
-                         bool dynamic,
-                         double time_start) {
+                         Eigen::Vector3d _target) {
   utils::Clock timer;
   timer.tic();
   line_of_sight_checks_ = 0;

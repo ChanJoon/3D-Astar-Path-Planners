@@ -112,7 +112,7 @@ private:
         global_path.header.stamp = ros::Time::now();
 
         for(int i = 0; i < real_tries; ++i){
-            auto path_data = algorithm_->findPath(start_pos, goal_pos, false, 0.0);
+            auto path_data = algorithm_->findPath(start_pos, goal_pos);
 
             if( std::get<bool>(path_data["solved"]) ){
                 std::vector<Eigen::Vector3d> path;

@@ -35,7 +35,7 @@ namespace Planners
         if (LineOfSight::fastLOS(current->parent, neighbor, grid_map_))
         {
             double tmp_g_score = current->parent->g_score + distanceParent;
-            if ((tmp_g_score) < neighbor->g_score)
+            if (tmp_g_score < neighbor->g_score)
             {
                 neighbor->parent = current->parent;
                 neighbor->g_score = tmp_g_score;
