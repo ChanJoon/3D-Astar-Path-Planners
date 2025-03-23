@@ -9,8 +9,10 @@
       <arg name="c_num"/>
       <arg name="p_num"/>
       <arg name="odom_topic"/>
+      <arg name="map_name" />
 
-      <node pkg ="map_generator" name ="random_forest" type ="random_forest" output = "screen">
+      <!-- Use random map generator -->
+      <!-- <node pkg ="map_generator" name ="random_forest" type ="random_forest" output = "screen">
             <remap from="~odometry" to="$(arg odom_topic)"/>
             <param name="init_state_x" value="$(arg init_x)"/>
             <param name="init_state_y" value="$(arg init_y)"/>
@@ -36,6 +38,17 @@
             <param name="sensing/radius" value="50.0"/>
             <param name="sensing/rate" value="10.0"/>
 
+      </node> -->
+
+      <!-- Use PCD file to generate map -->
+      <node pkg="map_generator" name="map_pub" type="map_pub" output="screen"
+            args="$(arg map_name)">
+            <param name="add_boundary" value="0"/>
+            <param name="is_bridge" value="0"/>
+            <param name="downsample_res" value="0.1"/>         
+            <param name="map_offset_x" value="0.0"/>   
+            <param name="map_offset_y" value="0.0"/>   
+            <param name="map_offset_z" value="0.0"/>   
       </node>
 
       <node pkg="poscmd_2_odom" name="drone_poscmd_2_odom" type="poscmd_2_odom" output="screen">

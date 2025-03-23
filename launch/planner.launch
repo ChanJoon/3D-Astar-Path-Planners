@@ -1,6 +1,6 @@
 <launch>
-    <arg name="map_name"            default="mbzirc_challenge3"/>
-    <arg name="map"                 default="$(find heuristic_planners)/resources/3dmaps/$(arg map_name).pcd"/>
+    <arg name="map_name"                 default="$(find heuristic_planners)/resources/3dmaps/large_office_001.pcd"/>
+    <!-- <arg name="map_name"                 default="$(find heuristic_planners)/resources/3dmaps/small_forest01cutoff.pcd"/> -->
 
     <arg name="algorithm_name"      default="thetastar"/>
 
@@ -21,8 +21,8 @@
     <arg name="odom_topic" value="/visual_slam/odom"/>
     <!-- <arg name="camera_pose_topic" value="/pcl_render_node/camera_pose"/> -->
     <!-- <arg name="depth_topic" value="/pcl_render_node/depth"/> -->
-    <arg name="cloud_topic" value="/map_generator/global_cloud"/>
-    <!-- <arg name="cloud_topic" value="/pcl_render_node/cloud"/> -->
+    <!-- <arg name="cloud_topic" value="/map_generator/global_cloud"/> -->
+    <arg name="cloud_topic" value="/pcl_render_node/cloud"/>
 
     <!-- intrinsic params of the depth camera -->
     <arg name="cx" value="321.04638671875"/>
@@ -32,7 +32,6 @@
     
     <arg name="output" default="screen"/>
     <node pkg="heuristic_planners" type="planner_ros_node" name="planner_ros_node" output="$(arg output)" required="true" >
-        <param name="map_path"              value="$(arg map)"/>
         <param name="resolution"            value="$(arg resolution)"/>
         <param name="frame_id"              value="world"/>
         
@@ -58,11 +57,10 @@
         <param name="thetastaragr/lambda_heuristic" value="5.0"/>
         <param name="thetastaragr/allocate_num" value="1000000"/>
 
-        <param name="thetastaragr/weight_goal" value="1" />
         <param name="thetastaragr/flying_cost" value="20" />
         <param name="thetastaragr/flying_cost_default" value="10" />
 
-        <param name="thetastaragr/ground_judge" value="$(arg ground_height)" />
+        <param name="thetastaragr/ground_judge" value="0.2" />
         <!-- 9.0 / 100 / 1.0 / 1.0 High transition cost -->
         <!-- 9.0 / 0 / 2.0 No Air -->
         <!-- 9.0 / 0 / 1.0 / 2.0 Ideal -->
@@ -164,13 +162,14 @@
         <param name="astar/allocated_node_num" value="1000000" />
 
         <!-- local cloud lidar not use cuda-->
-        <remap from="/grid_map/cloud" to="/pcl_render_node/cloud" />
-        <remap from="/grid_map/odom" to="/visual_slam/odom" />
+        <remap from="/grid_map/cloud" to="$(arg cloud_topic)" />
+        <remap from="/grid_map/odom" to="$(arg odom_topic)" />
     </node>
 
     <node pkg="rviz" name="rviz" type="rviz" args="-d $(find heuristic_planners)/rviz/planners.rviz"/>
     <!-- use simulator -->
     <include file="$(find heuristic_planners)/launch/simulator.xml">
+        <arg name="map_name" value="$(arg map_name)"/>
         <arg name="map_size_x_" value="$(arg world_size_x)"/>
         <arg name="map_size_y_" value="$(arg world_size_y)"/>
         <arg name="map_size_z_" value="$(arg world_size_z)"/>
