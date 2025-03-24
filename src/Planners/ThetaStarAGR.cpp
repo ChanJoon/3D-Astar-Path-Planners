@@ -57,7 +57,7 @@ namespace Planners
         bool is_parent_ground = (current->parent != nullptr) && !current->parent->motion_state;
         bool is_neighbor_ground = !next_motion_state;
         line_of_sight_checks_++;
-        if (LineOfSight::fastLOS(current->parent, neighbor, grid_map_)) {
+        if (is_parent_ground && is_neighbor_ground && LineOfSight::fastLOS(current->parent, neighbor, grid_map_)) {
             double los_distance = (current->parent->position - neighbor->position).norm();
             tmp_g_score = current->parent->g_score + los_distance;
             if (next_motion_state) {
