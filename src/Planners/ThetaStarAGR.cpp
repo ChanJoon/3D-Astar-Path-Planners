@@ -13,7 +13,6 @@ namespace Planners
         lnh_.param("thetastaragr/lambda_heuristic", lambda_heuristic_, -1.0);
         lnh_.param("thetastaragr/allocate_num", allocate_num_, -1);
 
-        lnh_.param("thetastaragr/weight_goal", weight_goal_, -1.0);
         lnh_.param("thetastaragr/flying_cost", flying_cost_, 0.0);
         lnh_.param("thetastaragr/flying_cost_default", flying_cost_default_, 0.0);
         lnh_.param("thetastaragr/ground_judge", ground_judge_, 0.0);
@@ -22,7 +21,6 @@ namespace Planners
         ROS_INFO("thetastaragr/time_resolution: %f", time_resolution_);
         ROS_INFO("thetastaragr/lambda_heuristic: %f", lambda_heuristic_);
         ROS_INFO("thetastaragr/allocate_num: %d", allocate_num_);
-        ROS_INFO("thetastaragr/weight_goal: %f", weight_goal_);
         ROS_INFO("thetastaragr/flying_cost: %f", flying_cost_);
         ROS_INFO("thetastaragr/flying_cost_default: %f", flying_cost_default_);
         ROS_INFO("thetastaragr/ground_judge: %f", ground_judge_);
@@ -33,25 +31,22 @@ namespace Planners
     inline void ThetaStarAGR::ComputeCost(NodePtr current, NodePtr neighbor, const Eigen::Vector3d &d_pos, const Eigen::Vector3d &target)
     {
         double direct_cost = d_pos.norm();
-        double tmp_g_score, penalty_g_score = 0.0;
-        bool next_motion_state = false;
+        double tmp_g_score = current->g_score + direct_cost;
+        double penalty_g_score  = 0.0;
+        bool next_motion_state = (neighbor->position[2] > ground_judge_);
 
-        if (neighbor->position[2] > ground_judge_) {
-            tmp_g_score -= current->penalty_g_score;
-            tmp_g_score += flying_cost_ * neighbor->position[2] / 2.0 + flying_cost_default_;
+        if (next_motion_state) {
             penalty_g_score = flying_cost_ * neighbor->position[2] / 2.0 + flying_cost_default_;
-            next_motion_state = true;
+            tmp_g_score -= current->penalty_g_score;
+            tmp_g_score += penalty_g_score;
         } else {
             tmp_g_score -= current->penalty_g_score;
-            penalty_g_score = 0;
-            next_motion_state = false;
         }
 
-
         if (current->parent == nullptr) { // If null, use original A* cost
-            if ((current->g_score + direct_cost) < neighbor->g_score) {
+            if (tmp_g_score < neighbor->g_score) {
                 neighbor->parent = current;
-                neighbor->g_score = current->g_score + direct_cost;
+                neighbor->g_score = tmp_g_score;
                 neighbor->f_score = neighbor->g_score + lambda_heuristic_ * getEuclHeu(neighbor->position, target);
                 neighbor->motion_state = next_motion_state;
                 neighbor->penalty_g_score = penalty_g_score;
@@ -59,31 +54,30 @@ namespace Planners
             return;
         }
 
-        double distanceParent = (current->parent->position - neighbor->position).norm();
+        bool is_parent_ground = (current->parent != nullptr) && !current->parent->motion_state;
+        bool is_neighbor_ground = !next_motion_state;
         line_of_sight_checks_++;
-        if (LineOfSight::fastLOS(current->parent, neighbor, grid_map_))
-        {
-            double parent_penalty = (neighbor->position[2] > ground_judge_) ? current->parent->penalty_g_score : 0.0;
-            double tmp_g_score = current->parent->g_score + distanceParent + parent_penalty;
-            if ((tmp_g_score) < neighbor->g_score)
+        if (LineOfSight::fastLOS(current->parent, neighbor, grid_map_)) {
+            double los_distance = (current->parent->position - neighbor->position).norm();
+            tmp_g_score = current->parent->g_score + los_distance;
+            if (next_motion_state) {
+                tmp_g_score -= current->penalty_g_score;
+                tmp_g_score += penalty_g_score;
+            }
+            if (tmp_g_score < neighbor->g_score)
             {
                 neighbor->parent = current->parent;
                 neighbor->g_score = tmp_g_score;
                 neighbor->f_score = neighbor->g_score + lambda_heuristic_ * getEuclHeu(neighbor->position, target);
                 neighbor->motion_state = next_motion_state;
-                neighbor->penalty_g_score = parent_penalty;
+                neighbor->penalty_g_score = penalty_g_score;
             }
-        }
-        else
-        {
-            if (tmp_g_score < neighbor->g_score)
-            {
+        } else if (tmp_g_score < neighbor->g_score) {
                 neighbor->parent = current;
                 neighbor->g_score = tmp_g_score;
                 neighbor->f_score = neighbor->g_score + lambda_heuristic_ * getEuclHeu(neighbor->position, target);
                 neighbor->motion_state = next_motion_state;
                 neighbor->penalty_g_score = penalty_g_score;
-            }
         }
     }
 
@@ -93,8 +87,7 @@ namespace Planners
 
         ComputeCost(current, neighbor, d_pos, target);
 
-        if (neighbor->g_score < old_g_score)
-        {
+        if (neighbor->g_score < old_g_score) {
             if (neighbor->node_state == IN_OPEN_SET) {
                 open_set_.erase(neighbor);
                 open_set_.insert(neighbor);
@@ -107,9 +100,7 @@ namespace Planners
     }
 
     PathData ThetaStarAGR::findPath(Eigen::Vector3d _source,
-                                    Eigen::Vector3d _target,
-                                    bool dynamic,
-                                    double time_start)
+                                    Eigen::Vector3d _target)
     {
         utils::Clock timer;
         timer.tic();
@@ -124,7 +115,7 @@ namespace Planners
         start_node->node_state = IN_OPEN_SET;
 
         open_set_.insert(start_node);
-        use_node_num_ += 1;
+        use_node_num_ = 1;
 
         if (start_node->position[2] < 0)
             start_node->position[2] = 0;
@@ -154,13 +145,11 @@ namespace Planners
             cur_node = *open_set_.begin();
 
             /* ---------- determine termination ---------- */
-
             bool reach_end = abs(cur_node->position(0) - _target(0)) <= resolution_ &&
                              abs(cur_node->position(1) - _target(1)) <= resolution_ &&
                              abs(cur_node->position(2) - _target(2)) <= resolution_;
 
-            if (reach_end)
-            {
+            if (reach_end) {
                 terminate_node = cur_node;
                 retrievePath(terminate_node);
 
@@ -169,20 +158,17 @@ namespace Planners
 
             /* ---------- pop node and add to close set ---------- */
             open_set_.erase(open_set_.begin());
-
             cur_node->node_state = IN_CLOSE_SET;
             iter_num_ += 1;
 
             /* ---------- init neighbor expansion ---------- */
             Eigen::Vector3d cur_pos = cur_node->position;
-            Eigen::Vector3d neighbor_pos;
-            Eigen::Vector3d d_pos;
+            Eigen::Vector3d neighbor_pos, d_pos;
 
             /* ---------- expansion loop ---------- */
             for (double dx = -resolution_; dx <= resolution_ + 1e-3; dx += resolution_)
                 for (double dy = -resolution_; dy <= resolution_ + 1e-3; dy += resolution_)
-                    for (double dz = -resolution_; dz <= resolution_ + 1e-3; dz += resolution_)
-                    {
+                    for (double dz = -resolution_; dz <= resolution_ + 1e-3; dz += resolution_) {
                         d_pos << dx, dy, dz;
 
                         if (d_pos.norm() < 1e-3)
@@ -198,8 +184,7 @@ namespace Planners
                         //   // cout << "outside map" << endl;
                         //   continue;
                         // }
-                        if (grid_map_->isInMap(neighbor_pos) == false)
-                        {
+                        if (!grid_map_->isInMap(neighbor_pos) || grid_map_->getInflateOccupancy(neighbor_pos)) {
                             continue;
                         }
 
@@ -207,8 +192,7 @@ namespace Planners
 
                         NodePtr neighbor_node = expanded_nodes_.find(neighbor_pos);
 
-                        if (neighbor_node != NULL && neighbor_node->node_state == IN_CLOSE_SET)
-                        {
+                        if (neighbor_node != NULL && neighbor_node->node_state == IN_CLOSE_SET) {
                             continue;
                         }
 
@@ -222,49 +206,49 @@ namespace Planners
                         // {
                         //     continue;
                         // }
-                        if (grid_map_->getInflateOccupancy(neighbor_pos) == true)
-                        {
-                            continue;
-                        }
+                        // if (grid_map_->getInflateOccupancy(neighbor_pos) == true)
+                        // {
+                        //     continue;
+                        // }
 
                         /* ---------- compute cost ---------- */
-                        double tmp_g_score, tmp_f_score, penalty_g_score;
-                        bool next_motion_state = false;
-                        tmp_g_score = d_pos.squaredNorm() + cur_node->g_score;
-                        if (neighbor_pos[2] > ground_judge_) {
-                            tmp_g_score -= cur_node->penalty_g_score;
-                            tmp_g_score += flying_cost_ * neighbor_pos[2] / 2.0 + flying_cost_default_;
-                            penalty_g_score = flying_cost_ * neighbor_pos[2] / 2.0 + flying_cost_default_;
-                            next_motion_state = true;
-                        } else {
-                            tmp_g_score -= cur_node->penalty_g_score;
-                            penalty_g_score = 0;
-                            next_motion_state = false;
-                        }
+                        // double tmp_g_score, tmp_f_score, penalty_g_score;
+                        // bool next_motion_state = false;
+                        // tmp_g_score = d_pos.squaredNorm() + cur_node->g_score;
+                        // if (neighbor_pos[2] > ground_judge_) {
+                        //     tmp_g_score -= cur_node->penalty_g_score;
+                        //     tmp_g_score += flying_cost_ * neighbor_pos[2] / 2.0 + flying_cost_default_;
+                        //     penalty_g_score = flying_cost_ * neighbor_pos[2] / 2.0 + flying_cost_default_;
+                        //     next_motion_state = true;
+                        // } else {
+                        //     tmp_g_score -= cur_node->penalty_g_score;
+                        //     penalty_g_score = 0;
+                        //     next_motion_state = false;
+                        // }
 
-                        tmp_f_score = tmp_g_score + lambda_heuristic_ * getEuclHeu(neighbor_pos, _target);
+                        // tmp_f_score = tmp_g_score + lambda_heuristic_ * getEuclHeu(neighbor_pos, _target);
 
-                        if (neighbor_node == NULL)
-                        {
-                            neighbor_node = path_node_pool_[use_node_num_];
-                            neighbor_node->position = neighbor_pos;
-                            neighbor_node->f_score = tmp_f_score;
-                            neighbor_node->g_score = tmp_g_score;
-                            neighbor_node->parent = cur_node;
-                            neighbor_node->node_state = IN_OPEN_SET;
-                            neighbor_node->motion_state = next_motion_state;
-                            neighbor_node->penalty_g_score = penalty_g_score;
+                        // if (neighbor_node == NULL)
+                        // {
+                        //     neighbor_node = path_node_pool_[use_node_num_];
+                        //     neighbor_node->position = neighbor_pos;
+                        //     neighbor_node->f_score = tmp_f_score;
+                        //     neighbor_node->g_score = tmp_g_score;
+                        //     neighbor_node->parent = cur_node;
+                        //     neighbor_node->node_state = IN_OPEN_SET;
+                        //     neighbor_node->motion_state = next_motion_state;
+                        //     neighbor_node->penalty_g_score = penalty_g_score;
 
-                            open_set_.insert(neighbor_node);
-                            expanded_nodes_.insert(neighbor_pos, neighbor_node);
+                        //     open_set_.insert(neighbor_node);
+                        //     expanded_nodes_.insert(neighbor_pos, neighbor_node);
 
-                            use_node_num_ += 1;
-                            if (use_node_num_ == allocate_num_)
-                            {
-                                cout << "run out of memory." << endl;
-                                return createResultDataObject(cur_node, timer, use_node_num_, false, _source, line_of_sight_checks_);
-                            }
-                        }
+                        //     use_node_num_ += 1;
+                        //     if (use_node_num_ == allocate_num_)
+                        //     {
+                        //         cout << "run out of memory." << endl;
+                        //         return createResultDataObject(cur_node, timer, use_node_num_, false, _source, line_of_sight_checks_);
+                        //     }
+                        // }
                         // else if (neighbor_node->node_state == IN_OPEN_SET)
                         // {
                         //     if (tmp_g_score < neighbor_node->g_score)
@@ -281,6 +265,21 @@ namespace Planners
                         // {
                         //     cout << "error type in searching: " << neighbor_node->node_state << endl;
                         // }
+
+                        if (neighbor_node == nullptr) {
+                            neighbor_node = path_node_pool_[use_node_num_];
+                            neighbor_node->position = neighbor_pos;
+                            neighbor_node->g_score = std::numeric_limits<double>::infinity();
+
+                            expanded_nodes_.insert(neighbor_pos, neighbor_node);
+
+                            use_node_num_ += 1;
+
+                            if (use_node_num_ == allocate_num_) {
+                                cout << "run out of memory." << endl;
+                                return createResultDataObject(cur_node, timer, use_node_num_, false, _source, line_of_sight_checks_);
+                            }
+                        }
                         UpdateVertex(cur_node, neighbor_node, d_pos, _target);
 
                         /* ----------  ---------- */
