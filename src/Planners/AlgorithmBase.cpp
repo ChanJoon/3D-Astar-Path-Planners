@@ -1,5 +1,4 @@
 #include "Planners/AlgorithmBase.hpp"
-// #include "plan_env/sdf_map.h"
 
 namespace Planners
 {
@@ -136,7 +135,6 @@ namespace Planners
     //     result_data["grid_cost2"]               = total_grid_cost2;
 
     //     result_data["line_of_sight_checks"]    = _sight_checks;
-    //     result_data["cost_weight"]             = cost_weight_;
     
     //     return result_data;
     // }
@@ -190,7 +188,6 @@ namespace Planners
         result_data["grid_cost2"]               = total_grid_cost2;
         
         result_data["line_of_sight_checks"]    = _sight_checks;
-        result_data["cost_weight"]             = cost_weight_;
         
         return result_data;
     }

@@ -121,14 +121,6 @@ PathData AStar::findPath(Eigen::Vector3d _source,
           neighbor_pos = cur_pos + d_pos;
           /* ---------- check if in feasible space ---------- */
           /* inside map range */
-          // if (neighbor_pos(0) <= origin_(0) || neighbor_pos(0) >= map_size_3d_(0) ||
-          //     neighbor_pos(1) <= origin_(1) || neighbor_pos(1) >= map_size_3d_(1) ||
-          //     neighbor_pos(2) <= origin_(2) || neighbor_pos(2) >= map_size_3d_(2)) {
-          //   continue;
-          // }
-          // if (edt_environment_->sdf_map_->isInMap(neighbor_pos) == false) {
-          //   continue;
-          // }
           if (grid_map_->isInMap(neighbor_pos) == false) {
             continue;
           }
@@ -139,12 +131,6 @@ PathData AStar::findPath(Eigen::Vector3d _source,
             continue;
           }
 
-          // if (edt_environment_->sdf_map_->getInflateOccupancy(neighbor_pos) == true) {
-          //   continue;
-          // }
-          // if (edt_environment_->evaluateCoarseEDT(neighbor_pos, -1.0) <= 0.3) {
-          //   continue;
-          // }
           if (grid_map_->getInflateOccupancy(neighbor_pos) == true) {
             continue;
           }

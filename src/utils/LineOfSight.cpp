@@ -11,9 +11,9 @@ namespace Planners
                 Eigen::Vector3d end = e_node->position;
                 const double distance = (end - start).norm();
                 
-                if (distance <= (1.73205080757 * 0.1)) {
-                    return true;
-                }
+                // if (distance <= (1.73205080757 * 0.1)) {
+                //     return true;
+                // }
                 
                 Eigen::Vector3d direction = (end - start).normalized();
                 double step_size = std::min(0.1 / 2.0, distance / 10.0);
@@ -78,10 +78,6 @@ namespace Planners
                         d1 += 2 * vecDiff.y();
                         d2 += 2 * vecDiff.z();
                         //Check if visitor is occupied and add visitor
-                        // if (_edt_env->sdf_map_->getInflateOccupancy(vec0) == 1)
-                        //     return false;
-                        // if (_edt_env->evaluateCoarseEDT(vec0, -1.0) <= 0.3)
-                        //     return false;
                         if (_grid_map->getInflateOccupancy(vec0) == true)
                             return false;
                         if ( _visited_nodes != nullptr )
@@ -110,10 +106,6 @@ namespace Planners
                         d1 += 2 * vecDiff.x();
                         d2 += 2 * vecDiff.z();
                         //Check if visitor is occupied and add visitor
-                        // if (_edt_env->sdf_map_->getInflateOccupancy(vec0) == 1)
-                        //     return false;
-                        // if (_edt_env->evaluateCoarseEDT(vec0, -1.0) <= 0.3)
-                        //     return false;
                         if (_grid_map->getInflateOccupancy(vec0) == true)
                             return false;
                         if ( _visited_nodes != nullptr )
@@ -141,10 +133,6 @@ namespace Planners
                         d1 += 2 * vecDiff.y();
                         d2 += 2 * vecDiff.x();
                         //Check if visitor is occupied and add visitor
-                        // if (_edt_env->sdf_map_->getInflateOccupancy(vec0) == 1)
-                        //     return false;
-                        // if (_edt_env->evaluateCoarseEDT(vec0, -1.0) <= 0.3)
-                        //     return false;
                         if (_grid_map->getInflateOccupancy(vec0) == true)
                             return false;
                         if ( _visited_nodes != nullptr )
