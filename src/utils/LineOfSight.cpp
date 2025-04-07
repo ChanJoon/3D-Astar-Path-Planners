@@ -9,25 +9,18 @@ namespace Planners
             bool fastLOS(const NodePtr& s_node, const NodePtr& e_node, const GridMap::Ptr& grid_map) {
                 Eigen::Vector3d start = s_node->position;
                 Eigen::Vector3d end = e_node->position;
-                const double distance = (end - start).norm();
                 
-                // if (distance <= (1.73205080757 * 0.1)) {
-                //     return true;
-                // }
+                double resolution = 0.1;
+                double step_size = resolution / 2.0;  // 0.05
                 
+                double distance = (end - start).norm();
                 Eigen::Vector3d direction = (end - start).normalized();
-                double step_size = std::min(0.1 / 2.0, distance / 10.0);
                 
-                double current_distance = step_size;
-                
-                while (current_distance < distance - step_size) {
-                    Eigen::Vector3d check_point = start + direction * current_distance;
-                    
-                    if (grid_map->getInflateOccupancy(check_point)) {
-                        return false;
-                    }
-                    
-                    current_distance += step_size;
+                for (double d = 0; d <= distance; d += step_size) {
+                     Eigen::Vector3d sample = start + direction * d;
+                     if (grid_map->getInflateOccupancy(sample)) {
+                         return false;
+                     }
                 }
                 
                 return true;

@@ -54,7 +54,7 @@ generate_messages(
 
 catkin_package(
  INCLUDE_DIRS include
- LIBRARIES AlgorithmBase AStar ThetaStar ThetaStarAGR
+ LIBRARIES AlgorithmBase AStar ThetaStar ThetaStarAGR ThetaStarAGRFuck KinoDynThetaStarAGR
  CATKIN_DEPENDS std_msgs visualization_msgs geometry_msgs nav_msgs roscpp message_runtime costmap_2d cv_bridge
 )
 
@@ -82,14 +82,15 @@ add_library(AStar                  src/Planners/AStar.cpp
                                             ${${PROJECT_NAME}_UTILS_SOURCES}
                                             )
 
-add_library(ThetaStar          src/Planners/ThetaStar.cpp )
+add_library(ThetaStar           src/Planners/ThetaStar.cpp )
 add_library(ThetaStarAGR        src/Planners/ThetaStarAGR.cpp )
+add_library(ThetaStarAGRFuck   src/Planners/ThetaStarAGRFuck.cpp )
+add_library(KinoDynThetaStarAGR src/Planners/KinoDynThetaStarAGR.cpp )
 
 add_library(PlanEnv
   # src/plan_env/edt_environment.cpp
   src/plan_env/obj_predictor.cpp
   src/plan_env/raycast.cpp
-  # src/plan_env/sdf_map.cpp
   src/plan_env/grid_map.cpp
 )
 target_link_libraries(PlanEnv
@@ -97,7 +98,7 @@ target_link_libraries(PlanEnv
   ${PCL_LIBRARIES}
 )
 
-list(APPEND ${PROJECT_NAME}_LIBRARIES AlgorithmBase AStar ThetaStar ThetaStarAGR PlanEnv)  
+list(APPEND ${PROJECT_NAME}_LIBRARIES AlgorithmBase AStar ThetaStar ThetaStarAGR ThetaStarAGRFuck KinoDynThetaStarAGR PlanEnv)  
 target_link_libraries(${${PROJECT_NAME}_LIBRARIES} ${catkin_LIBRARIES} ${Boost_LIBRARIES})
 if (OpenMP_CXX_FOUND)
   target_link_libraries(${${PROJECT_NAME}_LIBRARIES} OpenMP::OpenMP_CXX)

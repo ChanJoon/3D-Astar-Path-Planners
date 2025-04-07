@@ -3,6 +3,8 @@
 #include "Planners/AStar.hpp"
 #include "Planners/ThetaStar.hpp"
 #include "Planners/ThetaStarAGR.hpp"
+#include "Planners/ThetaStarAGRFuck.hpp"
+#include "Planners/KinoDynThetaStarAGR.hpp"
 #include "utils/misc.hpp"
 #include "utils/geometry_utils.hpp"
 #include "utils/metrics.hpp"
@@ -87,7 +89,6 @@ private:
         }
 
         Eigen::Vector3d origin, size;
-        // sdf_map_->getRegion(origin, size);
         grid_map_->getRegion(origin, size);
         auto isWithinBounds = [&origin, &size](Eigen::Vector3d &pos){
             return (pos.x() >= origin.x() && pos.y() >= origin.y() && pos.z() >= origin.z() &&
@@ -112,7 +113,7 @@ private:
         global_path.header.stamp = ros::Time::now();
 
         for(int i = 0; i < real_tries; ++i){
-            auto path_data = algorithm_->findPath(start_pos, goal_pos);
+            auto path_data = algorithm_->findPath(start_pos, goal_pos, Eigen::Vector3d::Zero(), Eigen::Vector3d::Zero(), Eigen::Vector3d::Zero());
 
             if( std::get<bool>(path_data["solved"]) ){
                 std::vector<Eigen::Vector3d> path;
@@ -132,8 +133,6 @@ private:
                         _rep.g_cost1.data               = std::get<unsigned int>(path_data["g_cost1"]);
                         _rep.g_cost2.data               = std::get<unsigned int>(path_data["g_cost2"]);
                         _rep.c_cost.data               = std::get<unsigned int>(path_data["c_cost"]);
-
-                        _rep.cost_weight.data          = std::get<double>(path_data["cost_weight"]);
                     }
                     path = algorithm_->getPath();
                     algorithm_->reset();
@@ -200,17 +199,20 @@ private:
             ROS_INFO("Using Air-Ground Robot Aware Theta*");
             algorithm_.reset(new Planners::ThetaStarAGR());
             algorithm_->setParam();
-        }else{
-            ROS_WARN("Wrong algorithm name parameter. Using ASTAR by default");
+        } else if ( algorithm_name == "thetastaragrfuck" ) {
+            ROS_INFO("Using MH Theta*");
+            algorithm_.reset(new Planners::ThetaStarAGRFuck());
+            algorithm_->setParam();
+        } else if ( algorithm_name == "kinodynthetastaragr" ){
+            ROS_INFO("Using Kinodynamic Air-Ground Robot Aware Theta*");
+            algorithm_.reset(new Planners::KinoDynThetaStarAGR());
+            algorithm_->setParam();
+        } else{
+            ROS_WARN("Wrong algorithm name parameter. Using A* by default");
             algorithm_.reset(new Planners::AStar());
         }
 
         configureHeuristic(_heuristic);
-
-        // sdf_map_.reset(new SDFMap);
-        // sdf_map_->initMap(lnh_);
-        // edt_environment_.reset(new EDTEnvironment);
-        // edt_environment_->setMap(sdf_map_);
 
         grid_map_.reset(new GridMap);
         grid_map_->initMap(lnh_);
@@ -224,10 +226,6 @@ private:
         lnh_.param("frame_id", frame_id, std::string("map"));
         lnh_.param("marker_scale", marker_scale, (double)0.1);
         configMarkers(algorithm_name, frame_id, marker_scale);
-
-        float cost_weight;
-        lnh_.param("cost_weight", cost_weight, (float)0.0);
-        algorithm_->setCostFactor(cost_weight);
 
         lnh_.param("overlay_markers", overlay_markers_, (bool)false);
     }
@@ -327,7 +325,6 @@ private:
     ros::ServiceServer request_path_server_, change_planner_server_;
     ros::Publisher line_markers_pub_, point_markers_pub_, global_path_pub_;
 
-    // SDFMap::Ptr sdf_map_;
     GridMap::Ptr grid_map_;
 
     std::unique_ptr<Planners::AlgorithmBase> algorithm_;

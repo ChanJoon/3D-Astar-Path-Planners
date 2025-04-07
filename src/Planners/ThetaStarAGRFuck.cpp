@@ -1,12 +1,12 @@
-#include "Planners/ThetaStarAGR.hpp"
+#include "Planners/ThetaStarAGRFuck.hpp"
 
 namespace Planners
 {
-    ThetaStarAGR::ThetaStarAGR() : ThetaStar("thetastaragr") {}
+    ThetaStarAGRFuck::ThetaStarAGRFuck() : ThetaStar("thetastaragrfuck") {}
 
-    ThetaStarAGR::ThetaStarAGR(std::string _name) : ThetaStar(_name) {}
+    ThetaStarAGRFuck::ThetaStarAGRFuck(std::string _name) : ThetaStar(_name) {}
 
-    void ThetaStarAGR::setParam()
+    void ThetaStarAGRFuck::setParam()
     {
         lnh_.param("thetastaragr/resolution", resolution_, -1.0);
         lnh_.param("thetastaragr/time_resolution", time_resolution_, -1.0);
@@ -17,6 +17,8 @@ namespace Planners
         lnh_.param("thetastaragr/flying_cost", flying_cost_, 0.0);
         lnh_.param("thetastaragr/flying_cost_default", flying_cost_default_, 0.0);
         lnh_.param("thetastaragr/ground_judge", ground_judge_, 0.0);
+        lnh_.param("thetastaragr/epsilon", epsilon_, 0.0);
+
 
         ROS_INFO("thetastaragr/resolution: %f", resolution_);
         ROS_INFO("thetastaragr/time_resolution: %f", time_resolution_);
@@ -25,23 +27,28 @@ namespace Planners
         ROS_INFO("thetastaragr/flying_cost: %f", flying_cost_);
         ROS_INFO("thetastaragr/flying_cost_default: %f", flying_cost_default_);
         ROS_INFO("thetastaragr/ground_judge: %f", ground_judge_);
+        ROS_INFO("thetastaragr/epsilon: %f", epsilon_);
 
         tie_breaker_ = 1.0 + 1.0 / 10000;
     }
 
-    inline void ThetaStarAGR::ComputeCost(NodePtr current, NodePtr neighbor, const Eigen::Vector3d &d_pos, const Eigen::Vector3d &target)
+    inline void ThetaStarAGRFuck::ComputeCost(NodePtr current, NodePtr neighbor, const Eigen::Vector3d &d_pos, const Eigen::Vector3d &target)
     {
         double direct_cost = d_pos.norm();
-        double tmp_g_score = current->g_score + direct_cost;
-        double penalty_g_score  = 0.0;
         bool next_motion_state = (neighbor->position[2] >= ground_judge_);
+        double delta_z = neighbor->position[2] - current->position[2];
 
-        if (next_motion_state) {
-            penalty_g_score = flying_cost_ * neighbor->position[2] / barrier_ + flying_cost_default_;
-            tmp_g_score -= current->penalty_g_score;
-            tmp_g_score += penalty_g_score;
-        } else {
-            tmp_g_score -= current->penalty_g_score;
+        // MH
+        // direct_cost *= epsilon_;
+        // direct_cost += flying_cost_ * delta_z;
+
+        // 이전에 되던거
+        double alpha = max(1 + flying_cost_ * delta_z / neighbor->position[2], epsilon_);
+        direct_cost *= (next_motion_state || current->motion_state == 1) ? alpha : epsilon_;
+
+        double tmp_g_score = current->g_score + direct_cost;
+        if (current->motion_state == 0 && next_motion_state) {
+            tmp_g_score += flying_cost_default_;
         }
 
         double best_cost = tmp_g_score;
@@ -51,14 +58,23 @@ namespace Planners
             line_of_sight_checks_++;
             if (LineOfSight::fastLOS(current->parent, neighbor, grid_map_)) {
                 double los_distance = (current->parent->position - neighbor->position).norm();
-                double tmp_g_score_parent = current->parent->g_score + los_distance;
-                if (next_motion_state) {
-                    tmp_g_score_parent -= current->parent->penalty_g_score;
-                    tmp_g_score_parent += penalty_g_score;
-                } else {
-                    tmp_g_score_parent -= current->parent->penalty_g_score;
-                }
+                double delta_los_z = neighbor->position[2] - current->parent->position[2];
+                
+                // MH
+                // los_distance *= epsilon_;
+                // los_distance += flying_cost_ * delta_los_z;
 
+                // 이전에 되던거
+                double alpha_los = max(1 + flying_cost_ * delta_los_z / neighbor->position[2], epsilon_);
+                los_distance *= (next_motion_state || current->parent->motion_state == 1) ? alpha_los : epsilon_;
+
+                double tmp_g_score_parent = current->parent->g_score + los_distance;
+
+                if (current->parent->motion_state == 0 && next_motion_state) {
+                    tmp_g_score_parent += flying_cost_default_;
+                }
+                
+    
                 if (tmp_g_score_parent < best_cost)
                 {
                     best_cost = tmp_g_score_parent;
@@ -72,11 +88,10 @@ namespace Planners
             neighbor->g_score = best_cost;
             neighbor->f_score = neighbor->g_score + lambda_heuristic_ * getEuclHeu(neighbor->position, target);
             neighbor->motion_state = next_motion_state ? 1 : 0;
-            neighbor->penalty_g_score = penalty_g_score;
         }
     }
 
-    inline void ThetaStarAGR::UpdateVertex(NodePtr current, NodePtr neighbor, const Eigen::Vector3d &d_pos, const Eigen::Vector3d &target)
+    inline void ThetaStarAGRFuck::UpdateVertex(NodePtr current, NodePtr neighbor, const Eigen::Vector3d &d_pos, const Eigen::Vector3d &target)
     {
         double old_g_score = neighbor->g_score;
 
@@ -94,7 +109,7 @@ namespace Planners
         }
     }
 
-    PathData ThetaStarAGR::findPath(Eigen::Vector3d _source,
+    PathData ThetaStarAGRFuck::findPath(Eigen::Vector3d _source,
                                     Eigen::Vector3d _target)
     {
         utils::Clock timer;
@@ -115,17 +130,11 @@ namespace Planners
         if (start_node->position[2] < 0)
             start_node->position[2] = 0;
 
-        if (start_node->position[2] >= ground_judge_)
-        {
-            start_node->g_score += flying_cost_ * start_node->position[2] / barrier_ + flying_cost_default_;
-            start_node->f_score += flying_cost_ * start_node->position[2] / barrier_ + flying_cost_default_;
-            start_node->penalty_g_score = flying_cost_ * start_node->position[2] / barrier_ + flying_cost_default_;
+        //TODO(ChanJoon): 초기 비용 제대로 할당하기 (지금은 지상으로 가정)
+        if (start_node->position[2] >= ground_judge_) {
             start_node->motion_state = 1; // flying
-        }
-        else
-        {
+        } else {
             start_node->motion_state = 0; // rolling
-            start_node->penalty_g_score = 0;
         }
 
         expanded_nodes_.insert(start_node->position, start_node);
@@ -171,14 +180,6 @@ namespace Planners
 
                         neighbor_pos = cur_pos + d_pos;
 
-                        /* ---------- check if in feasible space ---------- */
-                        /* inside map range */
-                        // if (neighbor_pos(0) <= origin_(0) || neighbor_pos(0) >= map_size_3d_(0) || neighbor_pos(1) <= origin_(1) ||
-                        //     neighbor_pos(1) >= map_size_3d_(1) || neighbor_pos(2) <= origin_(2) ||
-                        //     neighbor_pos(2) >= map_size_3d_(2)) {
-                        //   // cout << "outside map" << endl;
-                        //   continue;
-                        // }
                         if (!grid_map_->isInMap(neighbor_pos) || grid_map_->getInflateOccupancy(neighbor_pos)) {
                             continue;
                         }
@@ -187,84 +188,15 @@ namespace Planners
 
                         NodePtr neighbor_node = expanded_nodes_.find(neighbor_pos);
 
-                        if (neighbor_node != NULL && neighbor_node->node_state == IN_CLOSE_SET) {
+                        if (neighbor_node != NULL) {
                             continue;
                         }
-
-                        /* collision free */
-                        // double dist = dynamic ?
-                        // edt_environment_->evaluateCoarseEDT(neighbor_pos, cur_node->time + dt) :
-                        //                         edt_environment_->evaluateCoarseEDT(neighbor_pos,
-                        //                         -1.0);
-
-                        // if (edt_environment_->sdf_map_->getInflateOccupancy(neighbor_pos) != 0)
-                        // {
-                        //     continue;
-                        // }
-                        // if (grid_map_->getInflateOccupancy(neighbor_pos) == true)
-                        // {
-                        //     continue;
-                        // }
-
-                        /* ---------- compute cost ---------- */
-                        // double tmp_g_score, tmp_f_score, penalty_g_score;
-                        // bool next_motion_state = false;
-                        // tmp_g_score = d_pos.squaredNorm() + cur_node->g_score;
-                        // if (neighbor_pos[2] > ground_judge_) {
-                        //     tmp_g_score -= cur_node->penalty_g_score;
-                        //     tmp_g_score += flying_cost_ * neighbor_pos[2] / 2.0 + flying_cost_default_;
-                        //     penalty_g_score = flying_cost_ * neighbor_pos[2] / 2.0 + flying_cost_default_;
-                        //     next_motion_state = true;
-                        // } else {
-                        //     tmp_g_score -= cur_node->penalty_g_score;
-                        //     penalty_g_score = 0;
-                        //     next_motion_state = false;
-                        // }
-
-                        // tmp_f_score = tmp_g_score + lambda_heuristic_ * getEuclHeu(neighbor_pos, _target);
-
-                        // if (neighbor_node == NULL)
-                        // {
-                        //     neighbor_node = path_node_pool_[use_node_num_];
-                        //     neighbor_node->position = neighbor_pos;
-                        //     neighbor_node->f_score = tmp_f_score;
-                        //     neighbor_node->g_score = tmp_g_score;
-                        //     neighbor_node->parent = cur_node;
-                        //     neighbor_node->node_state = IN_OPEN_SET;
-                        //     neighbor_node->motion_state = next_motion_state;
-                        //     neighbor_node->penalty_g_score = penalty_g_score;
-
-                        //     open_set_.insert(neighbor_node);
-                        //     expanded_nodes_.insert(neighbor_pos, neighbor_node);
-
-                        //     use_node_num_ += 1;
-                        //     if (use_node_num_ == allocate_num_)
-                        //     {
-                        //         cout << "run out of memory." << endl;
-                        //         return createResultDataObject(cur_node, timer, use_node_num_, false, _source, line_of_sight_checks_);
-                        //     }
-                        // }
-                        // else if (neighbor_node->node_state == IN_OPEN_SET)
-                        // {
-                        //     if (tmp_g_score < neighbor_node->g_score)
-                        //     {
-                        //         neighbor_node->position = neighbor_pos;
-                        //         neighbor_node->f_score = tmp_f_score;
-                        //         neighbor_node->g_score = tmp_g_score;
-                        //         neighbor_node->parent = cur_node;
-                        //         neighbor_node->motion_state = next_motion_state;
-                        //         neighbor_node->penalty_g_score = penalty_g_score;
-                        //     }
-                        // }
-                        // else
-                        // {
-                        //     cout << "error type in searching: " << neighbor_node->node_state << endl;
-                        // }
 
                         if (neighbor_node == nullptr) {
                             neighbor_node = path_node_pool_[use_node_num_];
                             neighbor_node->position = neighbor_pos;
                             neighbor_node->g_score = std::numeric_limits<double>::infinity();
+                            neighbor_node->motion_state = (neighbor_pos[2] >= ground_judge_) ? 1 : 0;
 
                             expanded_nodes_.insert(neighbor_pos, neighbor_node);
 
