@@ -31,7 +31,6 @@ find_package(catkin REQUIRED COMPONENTS
   roscpp
   pcl_conversions
   pcl_ros
-  octomap_ros
   costmap_2d
   cv_bridge
 )
