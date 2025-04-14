@@ -4,7 +4,6 @@
 #include "Planners/ThetaStar.hpp"
 #include "Planners/ThetaStarAGR.hpp"
 #include "Planners/ThetaStarAGRpp.hpp"
-#include "Planners/KinoDynThetaStarAGR.hpp"
 #include "utils/misc.hpp"
 #include "utils/geometry_utils.hpp"
 #include "utils/metrics.hpp"
@@ -202,10 +201,6 @@ private:
         } else if ( algorithm_name == "thetastaragrpp" ) {
             ROS_INFO("Using MH Theta*");
             algorithm_.reset(new Planners::ThetaStarAGRpp());
-            algorithm_->setParam();
-        } else if ( algorithm_name == "kinodynthetastaragr" ){
-            ROS_INFO("Using Kinodynamic Air-Ground Robot Aware Theta*");
-            algorithm_.reset(new Planners::KinoDynThetaStarAGR());
             algorithm_->setParam();
         } else{
             ROS_WARN("Wrong algorithm name parameter. Using A* by default");
