@@ -1,12 +1,12 @@
-#include "Planners/ThetaStarAGRFuck.hpp"
+#include "Planners/ThetaStarAGRpp.hpp"
 
 namespace Planners
 {
-    ThetaStarAGRFuck::ThetaStarAGRFuck() : ThetaStar("thetastaragrfuck") {}
+    ThetaStarAGRpp::ThetaStarAGRpp() : ThetaStar("thetastaragrpp") {}
 
-    ThetaStarAGRFuck::ThetaStarAGRFuck(std::string _name) : ThetaStar(_name) {}
+    ThetaStarAGRpp::ThetaStarAGRpp(std::string _name) : ThetaStar(_name) {}
 
-    void ThetaStarAGRFuck::setParam()
+    void ThetaStarAGRpp::setParam()
     {
         lnh_.param("thetastaragr/resolution", resolution_, -1.0);
         lnh_.param("thetastaragr/time_resolution", time_resolution_, -1.0);
@@ -32,7 +32,7 @@ namespace Planners
         tie_breaker_ = 1.0 + 1.0 / 10000;
     }
 
-    inline void ThetaStarAGRFuck::ComputeCost(NodePtr current, NodePtr neighbor, const Eigen::Vector3d &d_pos, const Eigen::Vector3d &target)
+    inline void ThetaStarAGRpp::ComputeCost(NodePtr current, NodePtr neighbor, const Eigen::Vector3d &d_pos, const Eigen::Vector3d &target)
     {
         double direct_cost = d_pos.norm();
         bool next_motion_state = (neighbor->position[2] >= ground_judge_);
@@ -91,7 +91,7 @@ namespace Planners
         }
     }
 
-    inline void ThetaStarAGRFuck::UpdateVertex(NodePtr current, NodePtr neighbor, const Eigen::Vector3d &d_pos, const Eigen::Vector3d &target)
+    inline void ThetaStarAGRpp::UpdateVertex(NodePtr current, NodePtr neighbor, const Eigen::Vector3d &d_pos, const Eigen::Vector3d &target)
     {
         double old_g_score = neighbor->g_score;
 
@@ -109,7 +109,7 @@ namespace Planners
         }
     }
 
-    PathData ThetaStarAGRFuck::findPath(Eigen::Vector3d _source,
+    PathData ThetaStarAGRpp::findPath(Eigen::Vector3d _source,
                                     Eigen::Vector3d _target)
     {
         utils::Clock timer;

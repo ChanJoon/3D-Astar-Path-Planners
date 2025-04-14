@@ -35,12 +35,6 @@ namespace Planners
             }
             bool bresenham3D(const Eigen::Vector3d _lnode, const Eigen::Vector3d _rnode, const GridMap::Ptr &_grid_map, std::shared_ptr<std::vector<Eigen::Vector3d>> _visited_nodes)
             {
-                // if( geometry::distanceBetween2Nodes(_lnode, _rnode) <= dd_3D_ )
-                //     return true;
-                
-                // if( _visited_nodes == nullptr ){ //Case in which its not used
-                    // _visited_nodes.reset(new std::vector<Eigen::Vector3d>);
-                // }
                 int d1, d2;
                 Eigen::Vector3d vecS, vecDiff, vec0{_lnode}, vec1{_rnode};
                 vecDiff = geometry::abs(vec1 - vec0);

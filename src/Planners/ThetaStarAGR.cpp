@@ -44,35 +44,44 @@ namespace Planners
             tmp_g_score -= current->penalty_g_score;
         }
 
-        double best_cost = tmp_g_score;
-        NodePtr best_parent = current;
-
-        if (current->parent != nullptr) {
-            line_of_sight_checks_++;
-            if (LineOfSight::fastLOS(current->parent, neighbor, grid_map_)) {
-                double los_distance = (current->parent->position - neighbor->position).norm();
-                double tmp_g_score_parent = current->parent->g_score + los_distance;
-                if (next_motion_state) {
-                    tmp_g_score_parent -= current->parent->penalty_g_score;
-                    tmp_g_score_parent += penalty_g_score;
-                } else {
-                    tmp_g_score_parent -= current->parent->penalty_g_score;
-                }
-
-                if (tmp_g_score_parent < best_cost)
-                {
-                    best_cost = tmp_g_score_parent;
-                    best_parent = current->parent;
-                }
+        if (current->parent == nullptr) { // If null, use original A* cost
+            if (tmp_g_score < neighbor->g_score) {
+                neighbor->parent = current;
+                neighbor->g_score = tmp_g_score;
+                neighbor->f_score = neighbor->g_score + lambda_heuristic_ * getEuclHeu(neighbor->position, target);
+                neighbor->motion_state = next_motion_state;
+                neighbor->penalty_g_score = penalty_g_score;
             }
+            return;
         }
 
-        if (best_cost < neighbor->g_score) {
-            neighbor->parent = best_parent;
-            neighbor->g_score = best_cost;
-            neighbor->f_score = neighbor->g_score + lambda_heuristic_ * getEuclHeu(neighbor->position, target);
-            neighbor->motion_state = next_motion_state ? 1 : 0;
-            neighbor->penalty_g_score = penalty_g_score;
+        bool is_parent_ground = (current->parent != nullptr) && !current->parent->motion_state;
+        bool is_neighbor_ground = !next_motion_state;
+        line_of_sight_checks_++;
+        if (LineOfSight::fastLOS(current->parent, neighbor, grid_map_)) {
+        // if (is_parent_ground && is_neighbor_ground && LineOfSight::fastLOS(current->parent, neighbor, grid_map_)) {
+            double los_distance = (current->parent->position - neighbor->position).norm();
+            tmp_g_score = current->parent->g_score + los_distance;
+            if (next_motion_state) {
+                tmp_g_score -= current->parent->penalty_g_score;
+                tmp_g_score += penalty_g_score;
+            } else {
+                tmp_g_score -= current->parent->penalty_g_score;
+            }
+            if (tmp_g_score < neighbor->g_score)
+            {
+                neighbor->parent = current->parent;
+                neighbor->g_score = tmp_g_score;
+                neighbor->f_score = neighbor->g_score + lambda_heuristic_ * getEuclHeu(neighbor->position, target);
+                neighbor->motion_state = next_motion_state;
+                neighbor->penalty_g_score = penalty_g_score;
+            }
+        } else if (tmp_g_score < neighbor->g_score) {
+                neighbor->parent = current;
+                neighbor->g_score = tmp_g_score;
+                neighbor->f_score = neighbor->g_score + lambda_heuristic_ * getEuclHeu(neighbor->position, target);
+                neighbor->motion_state = next_motion_state;
+                neighbor->penalty_g_score = penalty_g_score;
         }
     }
 
