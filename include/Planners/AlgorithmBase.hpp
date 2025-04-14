@@ -31,10 +31,9 @@ class AlgorithmBase {
 
   enum { REACH_HORIZON = 1, REACH_END = 2, NO_PATH = 3, NEAR_END = 4 };
 
-//   void setEnvironment(const EDTEnvironment::Ptr &env);
   void setGridMap(GridMap::Ptr& grid_map);
   virtual void setParam() = 0;
-  void init();
+  virtual void init() = 0;
   void reset();
   void setHeuristic(HeuristicFunction heuristic_);
   virtual void setCostFactor(const float &_factor) { cost_weight_ = _factor; }
@@ -62,7 +61,6 @@ class AlgorithmBase {
                                           const unsigned int _sight_checks);
 
   HeuristicFunction heuristic;
-//   EDTEnvironment::Ptr edt_environment_;
   GridMap::Ptr grid_map_;
 
   double cost_weight_{0};

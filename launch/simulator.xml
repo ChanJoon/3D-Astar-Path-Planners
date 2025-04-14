@@ -1,7 +1,7 @@
 <launch>
-      <arg name="init_x" value="-0.0"/>
-      <arg name="init_y" value="-0.0"/>
-      <arg name="init_z" value="0.0"/>
+      <arg name="init_x" default="-0.0"/>
+      <arg name="init_y" default="-0.0"/>
+      <arg name="init_z" default="0.0"/>
       <arg name="obj_num" value="1" />
       <arg name="map_size_x_"/>
       <arg name="map_size_y_"/>
@@ -60,7 +60,7 @@
             <param name="init_x" value="$(arg init_x)"/>
             <param name="init_y" value="$(arg init_y)"/>
             <param name="init_z" value="$(arg init_z)"/>
-            <remap from="~command" to="/planning/pos_cmd"/>
+            <remap from="~command" to="/position_cmd"/>
             <remap from="~odometry" to="$(arg odom_topic)"/>
       </node>
 

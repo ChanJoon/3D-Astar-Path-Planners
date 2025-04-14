@@ -6,7 +6,8 @@ add_compile_options(-std=c++17 -Wall -Wextra -pedantic)
 if(CMAKE_BUILD_TYPE STREQUAL "Release")
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O2")
 elseif(CMAKE_BUILD_TYPE STREQUAL "Debug")
-  add_compile_options(-fsanitize=address,undefined -static-libasan -g3)
+  add_compile_options(-fsanitize=address,undefined -g3)
+  add_link_options(-fsanitize=address,undefined)
 endif()
 
 # =================== Dependencies ===================

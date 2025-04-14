@@ -1,6 +1,6 @@
 <launch>
-    <arg name="map_name"                 default="$(find heuristic_planners)/resources/3dmaps/large_office_001.pcd"/>
-    <!-- <arg name="map_name"                 default="$(find heuristic_planners)/resources/3dmaps/small_forest01cutoff.pcd"/> -->
+    <!-- <arg name="map_name"                 default="$(find heuristic_planners)/resources/3dmaps/large_office_001.pcd"/> -->
+    <arg name="map_name"                 default="$(find heuristic_planners)/resources/3dmaps/small_forest01cutoff.pcd"/>
 
     <arg name="algorithm_name"      default="thetastar"/>
 
@@ -9,7 +9,6 @@
     <arg name="world_size_z"        default="10"/>
     <arg name="resolution"          default="0.1"/>
     <arg name="marker_scale"        default="0.1"/>
-
     <arg name="ground_height"       default="0.01"/>
 
     <!-- Possibles values are: euclidean, euclidean_optimized, manhattan, octogonal and dijkstra -->
@@ -18,20 +17,25 @@
     <arg name="overlay_markers"     default="false"/>
     <arg name="cost_weight" default="4.0"/>
 
-    <arg name="odom_topic" value="/visual_slam/odom"/>
-    <!-- <arg name="camera_pose_topic" value="/pcl_render_node/camera_pose"/> -->
-    <!-- <arg name="depth_topic" value="/pcl_render_node/depth"/> -->
-    <arg name="cloud_topic" value="/map_generator/global_cloud"/>
-    <!-- <arg name="cloud_topic" value="/pcl_render_node/cloud"/> -->
+    <arg name="odom_topic" default="/visual_slam/odom"/>
+    <arg name="camera_pose_topic" default="/pcl_render_node/camera_pose"/>
+    <arg name="depth_topic" default="/pcl_render_node/depth"/>
+    <arg name="cloud_topic" default="/map_generator/global_cloud"/>
 
     <!-- intrinsic params of the depth camera -->
-    <arg name="cx" value="321.04638671875"/>
-    <arg name="cy" value="243.44969177246094"/>
-    <arg name="fx" value="387.229248046875"/>
-    <arg name="fy" value="387.229248046875"/>
+    <arg name="cx" default="321.04638671875"/>
+    <arg name="cy" default="243.44969177246094"/>
+    <arg name="fx" default="387.229248046875"/>
+    <arg name="fy" default="387.229248046875"/>
+
+    <arg name="init_x" default="-1.0"/>
+    <arg name="init_y" default="0.0"/>
+    <arg name="init_z" default="0.1"/>
     
     <arg name="output" default="screen"/>
     <node pkg="heuristic_planners" type="planner_ros_node" name="planner_ros_node" output="$(arg output)" required="true" >
+        <remap from="~goal" to="/move_base_simple/goal"/>
+
         <param name="resolution"            value="$(arg resolution)"/>
         <param name="frame_id"              value="world"/>
         
@@ -40,7 +44,11 @@
         <param name="cost_weight"           value="$(arg cost_weight)"/>
         <param name="heuristic"             value="$(arg heuristic)"/>
         <param name="marker_scale"          value="$(arg marker_scale)"/>
+        <param name="ground_height"       value="$(arg ground_height)"/>
 
+        <param name="init_x"                value="$(arg init_x)"/>
+        <param name="init_y"                value="$(arg init_y)"/>
+        <param name="init_z"                value="$(arg init_z)"/>
 
         <param name="astar/resolution" value="0.1"/>
         <param name="astar/time_resolution" value="0.8"/>
@@ -52,70 +60,23 @@
         <param name="thetastar/lambda_heuristic" value="5.0"/>
         <param name="thetastar/allocate_num" value="1000000"/>
 
+        <!-- 여기서부터 thetastar AGR or FUCK 버전 파라미터 -->
+        <!-- 거의 고정 -->
         <param name="thetastaragr/resolution" value="0.1"/>
         <param name="thetastaragr/time_resolution" value="0.8"/>
-        <param name="thetastaragr/lambda_heuristic" value="5.0"/>
         <param name="thetastaragr/allocate_num" value="1000000"/>
 
-        <param name="thetastaragr/flying_cost" value="20" />
-        <param name="thetastaragr/flying_cost_default" value="10" />
+        <!-- 약간 고정 -->
+        <param name="thetastaragr/lambda_heuristic" value="5.0"/>
+        <param name="thetastaragr/ground_judge" value="0.1" />
 
-        <param name="thetastaragr/ground_judge" value="0.2" />
-        <!-- 9.0 / 100 / 1.0 / 1.0 High transition cost -->
-        <!-- 9.0 / 0 / 2.0 No Air -->
-        <!-- 9.0 / 0 / 1.0 / 2.0 Ideal -->
+        <!-- 튜닝 파라미터들 -->
+        <param name="thetastaragr/barrier" value="2.0" />
+        <param name="thetastaragr/flying_cost" value="10.0" />
+        <param name="thetastaragr/flying_cost_default" value="0" />
+        <param name="thetastaragr/epsilon" value="0.1" />
 
-
-        <remap from="/sdf_map/odom" to="$(arg odom_topic)"/>
-        <!-- <remap from="/sdf_map/pose"  to="$(arg camera_pose_topic)"/>  -->
-        <!-- <remap from="/sdf_map/depth" to="$(arg depth_topic)"/> -->
-        <remap from="/sdf_map/cloud" to="$(arg cloud_topic)"/>
-
-        <param name="sdf_map/resolution"      value="0.1" /> 
-        <param name="sdf_map/map_size_x"   value="$(arg world_size_x)" /> 
-        <param name="sdf_map/map_size_y"   value="$(arg world_size_y)" /> 
-        <param name="sdf_map/map_size_z"   value="$(arg world_size_z)" /> 
-        <param name="sdf_map/local_update_range_x"  value="5.5" /> 
-        <param name="sdf_map/local_update_range_y"  value="5.5" /> 
-        <param name="sdf_map/local_update_range_z"  value="4.5" /> 
-        <param name="sdf_map/obstacles_inflation"     value="0.099" /> 
-        <param name="sdf_map/local_bound_inflate"    value="0.0"/>
-        <param name="sdf_map/local_map_margin" value="50"/>
-        <param name="sdf_map/ground_height"        value="$(arg ground_height)"/>
-        <!-- camera parameter -->
-        <param name="sdf_map/cx" value="$(arg cx)"/>
-        <param name="sdf_map/cy" value="$(arg cy)"/>
-        <param name="sdf_map/fx" value="$(arg fx)"/>
-        <param name="sdf_map/fy" value="$(arg fy)"/>
-        <!-- depth filter -->
-        <param name="sdf_map/use_depth_filter" value="true"/>
-        <param name="sdf_map/depth_filter_tolerance" value="0.15"/>
-        <param name="sdf_map/depth_filter_maxdist"   value="5.0"/>
-        <param name="sdf_map/depth_filter_mindist"   value="0.2"/>
-        <param name="sdf_map/depth_filter_margin"    value="2"/>
-        <param name="sdf_map/k_depth_scaling_factor" value="1000.0"/>
-        <param name="sdf_map/skip_pixel" value="2"/>
-        <!-- local fusion -->
-        <param name="sdf_map/p_hit"  value="0.65"/>
-        <param name="sdf_map/p_miss" value="0.35"/>
-        <param name="sdf_map/p_min"  value="0.12"/>
-        <param name="sdf_map/p_max"  value="0.90"/>
-        <param name="sdf_map/p_occ"  value="0.80"/>
-        <param name="sdf_map/min_ray_length" value="0.5"/>
-        <param name="sdf_map/max_ray_length" value="4.5"/>
-
-        <param name="sdf_map/esdf_slice_height" value="0.3"/>
-        <param name="sdf_map/visualization_truncate_height"   value="2.49"/>
-        <param name="sdf_map/virtual_ceil_height"   value="2.5"/>
-        <param name="sdf_map/show_occ_time"  value="false"/>
-        <param name="sdf_map/show_esdf_time" value="false"/>
-        <param name="sdf_map/pose_type"     value="1"/>  
-        <param name="sdf_map/frame_id"      value="world"/>
-
-
-
-
-
+        <!-- ############################################ -->
         <param name="grid_map/resolution" value="0.1" />
         <param name="grid_map/map_size_x" value="$(arg world_size_x)" />
         <param name="grid_map/map_size_y" value="$(arg world_size_y)" />
@@ -156,14 +117,11 @@
         <param name="grid_map/pose_type" value="2" />
         <param name="grid_map/frame_id" value="world" />
 
-        <!-- astar parameters -->
-        <param name="astar/resolution" value="0.1" />
-        <param name="astar/lambda_heu" value="1.0" />
-        <param name="astar/allocated_node_num" value="1000000" />
-
         <!-- local cloud lidar not use cuda-->
         <remap from="/grid_map/cloud" to="/pcl_render_node/cloud" />
         <remap from="/grid_map/odom" to="$(arg odom_topic)" />
+        <remap from="/grid_map/pose" to="$(arg camera_pose_topic)" />
+        <remap from="/grid_map/depth" to="$(arg depth_topic)" />
     </node>
 
     <node pkg="rviz" name="rviz" type="rviz" args="-d $(find heuristic_planners)/rviz/planners.rviz"/>
@@ -173,8 +131,12 @@
         <arg name="map_size_x_" value="$(arg world_size_x)"/>
         <arg name="map_size_y_" value="$(arg world_size_y)"/>
         <arg name="map_size_z_" value="$(arg world_size_z)"/>
+
+        <arg name="init_x" value="$(arg init_x)"/>
+        <arg name="init_y" value="$(arg init_y)"/>
+        <arg name="init_z" value="$(arg init_z)"/>
         <arg name="c_num" value="0"/>
-        <arg name="p_num" value="80"/>
+        <arg name="p_num" value="0"/>
 
         <arg name="odom_topic" value="$(arg odom_topic)" />
     </include>

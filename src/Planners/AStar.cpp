@@ -11,6 +11,23 @@ AStar::~AStar() {
   }
 }
 
+void AStar::init(){
+  this->inv_resolution_ = 1.0 / resolution_;
+  inv_time_resolution_ = 1.0 / time_resolution_;
+
+  grid_map_->getRegion(origin_, map_size_3d_);
+  ROS_INFO("origin: %f, %f, %f", origin_(0), origin_(1), origin_(2));
+  ROS_INFO("map_size_3d: %f, %f, %f", map_size_3d_(0), map_size_3d_(1), map_size_3d_(2));
+  ROS_INFO("allocate_num_: %d", allocate_num_);
+
+  path_node_pool_.resize(allocate_num_);
+  for (int i = 0; i < allocate_num_; i++) {
+    path_node_pool_[i] = new Node0();
+  }
+  use_node_num_ = 0;
+  iter_num_ = 0;
+}
+
 void AStar::setParam() {
   lnh_.param("astar/resolution", resolution_, -1.0);
   lnh_.param("astar/time_resolution", time_resolution_, -1.0);

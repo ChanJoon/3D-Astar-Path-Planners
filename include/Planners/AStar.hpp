@@ -20,6 +20,7 @@ namespace Planners{
         ~AStar();
 
         void setParam() override;
+        void init() override;
         virtual inline PathData findPath(Eigen::Vector3d _source, Eigen::Vector3d _target);
         
         protected:

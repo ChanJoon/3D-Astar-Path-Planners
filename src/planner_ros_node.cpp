@@ -35,18 +35,25 @@ public:
         std::string algorithm_name;
         lnh_.param("algorithm", algorithm_name, (std::string)"astar");
         lnh_.param("heuristic", heuristic_, (std::string)"euclidean");
+        lnh_.param("resolution", resolution_, (float)0.2);
+        lnh_.param("inflate_map", inflate_, (bool)true);
+        lnh_.param("frame_id", frame_id, std::string("map"));
+        lnh_.param("marker_scale", marker_scale, (double)0.1);
+        lnh_.param("overlay_markers", overlay_markers_, (bool)false);
+        lnh_.param("ground_height", ground_height_, (double)0.0);
         
         configureAlgorithm(algorithm_name, heuristic_);
         
         request_path_server_   = lnh_.advertiseService("request_path",  &HeuristicPlannerROS::requestPathService, this);
         change_planner_server_ = lnh_.advertiseService("set_algorithm", &HeuristicPlannerROS::setAlgorithm, this);
+
+        rviz_trigger_callback_ = lnh_.subscribe("goal", 10, &HeuristicPlannerROS::rvizTriggerCallback, this);
         
         line_markers_pub_  = lnh_.advertise<visualization_msgs::Marker>("path_line_markers", 1);
         point_markers_pub_ = lnh_.advertise<visualization_msgs::Marker>("path_points_markers", 1);
         global_path_pub_ = lnh_.advertise<nav_msgs::Path>("global_path", 1);
         
     }
-    // EDTEnvironment::Ptr edt_environment_;
 
 private:
 
@@ -56,7 +63,79 @@ private:
         rep.result.data = true;
         return true;
     }
+    void rvizTriggerCallback(const geometry_msgs::PoseStampedConstPtr &msg) {
+        algorithm_->reset();
+        double init_x_, init_y_, init_z_;
+        lnh_.param("init_x", init_x_, 0.0);
+        lnh_.param("init_y", init_y_, 0.0);
+        lnh_.param("init_z", init_z_, 0.0);
+        
+        Eigen::Vector3d start_pos(init_x_, init_y_, init_z_);
+        Eigen::Vector3d goal_pos(msg->pose.position.x, msg->pose.position.y, ground_height_+0.01);
+        
+        Eigen::Vector3d origin, size;
+        grid_map_->getRegion(origin, size);
+        auto isWithinBounds = [&origin, &size](const Eigen::Vector3d &pos) {
+            return (pos.x() >= origin.x() && pos.y() >= origin.y() && pos.z() >= origin.z() &&
+               pos.x() <= size.x() && pos.y() <= size.y() && pos.z() <= size.z());
+        };
+        
+        if (algorithm_->detectCollision(start_pos) || !isWithinBounds(start_pos)) {
+            std::cout << start_pos << ": Start not valid" << std::endl;
+            return;
+        }
+        if (algorithm_->detectCollision(goal_pos) || !isWithinBounds(goal_pos)) {
+            std::cout << goal_pos << ": Goal not valid" << std::endl;
+            return;
+        }
+        
+        ROS_INFO("Planning path from [%f, %f, %f] to [%f, %f, %f]", 
+             start_pos.x(), start_pos.y(), start_pos.z(),
+             goal_pos.x(), goal_pos.y(), goal_pos.z());
+
+        auto path_data = algorithm_->findPath(start_pos, goal_pos, Eigen::Vector3d::Zero(), Eigen::Vector3d::Zero(), Eigen::Vector3d::Zero());
+        
+        if (std::get<bool>(path_data["solved"])) {
+            std::vector<Eigen::Vector3d> path = algorithm_->getPath();
+            algorithm_->reset();
+            
+            // Publish path as markers
+            path_line_markers_.points.clear();
+            path_points_markers_.points.clear();
+            
+            nav_msgs::Path global_path;
+            global_path.header.frame_id = "world";
+            global_path.header.stamp = ros::Time::now();
+            
+            for (const auto &it: path) {
+                geometry_msgs::PoseStamped pose;
+                pose.header = global_path.header;
+                pose.pose.position.x = it.x();
+                pose.pose.position.y = it.y();
+                pose.pose.position.z = it.z();
+                pose.pose.orientation.w = 1.0;
+                global_path.poses.push_back(pose);
+                
+                geometry_msgs::Point point;
+                point.x = it.x();
+                point.y = it.y();
+                point.z = it.z();
+                path_line_markers_.points.push_back(point);
+                path_points_markers_.points.push_back(point);
+            }
+            
+            publishMarker(path_line_markers_, line_markers_pub_);
+            publishMarker(path_points_markers_, point_markers_pub_);
+            global_path_pub_.publish(global_path);
+            
+            ROS_INFO("Path published successfully");
+        } else {
+            ROS_WARN("Could not find a path between the specified points");
+        }
+    }
+    
     bool requestPathService(heuristic_planners::GetPathRequest &_req, heuristic_planners::GetPathResponse &_rep){
+        algorithm_->reset();
 
         if( !_req.algorithm.data.empty() ){
             if( !_req.heuristic.data.empty() ){
@@ -183,8 +262,6 @@ private:
     }
     void configureAlgorithm(const std::string &algorithm_name, const std::string &_heuristic){
 
-        lnh_.param("resolution", resolution_, (float)0.2);
-        lnh_.param("inflate_map", inflate_, (bool)true);
 
         if( algorithm_name == "astar" ){
             ROS_INFO("Using A*");
@@ -205,6 +282,7 @@ private:
         } else{
             ROS_WARN("Wrong algorithm name parameter. Using A* by default");
             algorithm_.reset(new Planners::AStar());
+            algorithm_->setParam();
         }
 
         configureHeuristic(_heuristic);
@@ -213,16 +291,10 @@ private:
         grid_map_->initMap(lnh_);
         algorithm_->setGridMap(grid_map_);
 
-        // algorithm_->setEnvironment(edt_environment_);
         algorithm_->init();
-        
-        std::string frame_id;
-        double marker_scale;
-        lnh_.param("frame_id", frame_id, std::string("map"));
-        lnh_.param("marker_scale", marker_scale, (double)0.1);
+    
         configMarkers(algorithm_name, frame_id, marker_scale);
 
-        lnh_.param("overlay_markers", overlay_markers_, (bool)false);
     }
     void configureHeuristic(const std::string &_heuristic){
         
@@ -319,6 +391,7 @@ private:
     ros::NodeHandle lnh_{"~"};
     ros::ServiceServer request_path_server_, change_planner_server_;
     ros::Publisher line_markers_pub_, point_markers_pub_, global_path_pub_;
+    ros::Subscriber rviz_trigger_callback_;
 
     GridMap::Ptr grid_map_;
 
@@ -328,19 +401,14 @@ private:
     
     //Parameters
     float resolution_;
+    std::string frame_id;
+    double marker_scale;
 
     bool inflate_{false};
-    unsigned int inflation_steps_{0};
-    std::string data_folder_;
     bool overlay_markers_{0};
     unsigned int color_id_{0};
-    nav_msgs::OccupancyGrid occupancy_grid_;
-    pcl::PointCloud<pcl::PointXYZ> cloud_;
-    //0: no map yet
-    //1: using occupancy
-    //2: using cloud
-    int input_map_{0};
     std::string heuristic_;
+    double ground_height_;
 
 };
 int main(int argc, char **argv)

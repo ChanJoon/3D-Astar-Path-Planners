@@ -6,31 +6,13 @@ namespace Planners
     AlgorithmBase::AlgorithmBase(const std::string &_algorithm_name = "generic_3d_algorithm"): algorithm_name_(_algorithm_name){
         setHeuristic(&Heuristic::euclidean);
     }
-    // void AlgorithmBase::setEnvironment(const EDTEnvironment::Ptr &env){
-    //     edt_environment_ = env;
-    // }
 
     void AlgorithmBase::setGridMap(GridMap::Ptr& grid_map)
     {
         grid_map_ = grid_map;
     }
 
-    void AlgorithmBase::init(){
-        this->inv_resolution_ = 1.0 / resolution_;
-        inv_time_resolution_ = 1.0 / time_resolution_;
-
-        // edt_environment_->getMapRegion(origin_, map_size_3d_);
-        grid_map_->getRegion(origin_, map_size_3d_);
-        ROS_INFO("origin: %f, %f, %f", origin_(0), origin_(1), origin_(2));
-        ROS_INFO("map_size_3d: %f, %f, %f", map_size_3d_(0), map_size_3d_(1), map_size_3d_(2));
-      
-        path_node_pool_.resize(allocate_num_);
-        for (int i = 0; i < allocate_num_; i++) {
-          path_node_pool_[i] = new Node0();
-        }
-        use_node_num_ = 0;
-        iter_num_ = 0;
-    }
+    void AlgorithmBase::init(){}
 
     void AlgorithmBase::reset() {
         expanded_nodes_.clear();

@@ -11,6 +11,7 @@ namespace Planners
         ThetaStar();
         ThetaStar(std::string _name);
 
+        void init() override;
         void setParam();
     protected:
         virtual inline void ComputeCost(NodePtr current, NodePtr neighbor, const Eigen::Vector3d& d_pos, const Eigen::Vector3d& target) override;
