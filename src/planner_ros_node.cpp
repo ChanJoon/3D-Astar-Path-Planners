@@ -8,8 +8,6 @@
 #include "utils/geometry_utils.hpp"
 #include "utils/metrics.hpp"
 
-// #include "plan_env/edt_environment.h"
-
 #include <ros/ros.h>
 
 #include <visualization_msgs/Marker.h>

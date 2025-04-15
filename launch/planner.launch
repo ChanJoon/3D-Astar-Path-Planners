@@ -28,12 +28,12 @@
     <arg name="fx" default="387.229248046875"/>
     <arg name="fy" default="387.229248046875"/>
 
-    <arg name="init_x" default="-1.0"/>
+    <arg name="init_x" default="-5.0"/>
     <arg name="init_y" default="0.0"/>
     <arg name="init_z" default="0.1"/>
     
     <arg name="output" default="screen"/>
-    <node pkg="heuristic_planners" type="planner_ros_node" name="planner_ros_node" output="$(arg output)" required="true" >
+    <node pkg="heuristic_planners" type="planner_ros_node" name="global_planner" output="$(arg output)" required="true" >
         <remap from="~goal" to="/move_base_simple/goal"/>
 
         <param name="resolution"            value="$(arg resolution)"/>
@@ -136,7 +136,7 @@
         <arg name="init_y" value="$(arg init_y)"/>
         <arg name="init_z" value="$(arg init_z)"/>
         <arg name="c_num" value="0"/>
-        <arg name="p_num" value="0"/>
+        <arg name="p_num" value="80"/>
 
         <arg name="odom_topic" value="$(arg odom_topic)" />
     </include>
