@@ -8,7 +8,7 @@ namespace Planners
     class ThetaStar : public AStar
     {
     public:
-        ThetaStar();
+        ThetaStar(const rclcpp::Node::SharedPtr& node);
         ThetaStar(std::string _name);
 
         void init() override;
@@ -16,6 +16,7 @@ namespace Planners
     protected:
         virtual inline void ComputeCost(NodePtr current, NodePtr neighbor, const Eigen::Vector3d& d_pos, const Eigen::Vector3d& target) override;
         virtual inline void UpdateVertex(NodePtr current, NodePtr neighbor, const Eigen::Vector3d& d_pos, const Eigen::Vector3d& target) override;
+        rclcpp::Node::SharedPtr node_;
     };
 }
 

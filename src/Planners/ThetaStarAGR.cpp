@@ -2,7 +2,7 @@
 
 namespace Planners
 {
-    ThetaStarAGR::ThetaStarAGR() : ThetaStar("thetastaragr") {}
+    ThetaStarAGR::ThetaStarAGR(const rclcpp::Node::SharedPtr& node) : ThetaStar("thetastaragr"), node_(node) {}
 
     ThetaStarAGR::ThetaStarAGR(std::string _name) : ThetaStar(_name) {}
 
@@ -12,8 +12,8 @@ namespace Planners
         inv_time_resolution_ = 1.0 / time_resolution_;
 
         grid_map_->getRegion(origin_, map_size_3d_);
-        ROS_INFO("origin: %f, %f, %f", origin_(0), origin_(1), origin_(2));
-        ROS_INFO("map_size_3d: %f, %f, %f", map_size_3d_(0), map_size_3d_(1), map_size_3d_(2));
+        RCLCPP_INFO(node_->get_logger(), "origin: %f, %f, %f", origin_(0), origin_(1), origin_(2));
+        RCLCPP_INFO(node_->get_logger(), "map_size_3d: %f, %f, %f", map_size_3d_(0), map_size_3d_(1), map_size_3d_(2));
 
         path_node_pool_.resize(allocate_num_);
         for (int i = 0; i < allocate_num_; i++) {
@@ -25,23 +25,32 @@ namespace Planners
 
     void ThetaStarAGR::setParam()
     {
-        lnh_.param("thetastaragr/resolution", resolution_, -1.0);
-        lnh_.param("thetastaragr/time_resolution", time_resolution_, -1.0);
-        lnh_.param("thetastaragr/lambda_heuristic", lambda_heuristic_, -1.0);
-        lnh_.param("thetastaragr/allocate_num", allocate_num_, -1);
+        node_->declare_parameter("thetastaragr.resolution", -1.0);
+        node_->declare_parameter("thetastaragr.time_resolution", -1.0);
+        node_->declare_parameter("thetastaragr.lambda_heuristic", -1.0);
+        node_->declare_parameter("thetastaragr.allocate_num", -1);
 
-        lnh_.param("thetastaragr/barrier", barrier_, 0.0);
-        lnh_.param("thetastaragr/flying_cost", flying_cost_, 0.0);
-        lnh_.param("thetastaragr/flying_cost_default", flying_cost_default_, 0.0);
-        lnh_.param("thetastaragr/ground_judge", ground_judge_, 0.0);
+        node_->declare_parameter("thetastaragr.barrier", 0.0);
+        node_->declare_parameter("thetastaragr.flying_cost", 0.0);
+        node_->declare_parameter("thetastaragr.flying_cost_default", 0.0);
+        node_->declare_parameter("thetastaragr.ground_judge", 0.0);
 
-        ROS_INFO("thetastaragr/resolution: %f", resolution_);
-        ROS_INFO("thetastaragr/time_resolution: %f", time_resolution_);
-        ROS_INFO("thetastaragr/lambda_heuristic: %f", lambda_heuristic_);
-        ROS_INFO("thetastaragr/allocate_num: %d", allocate_num_);
-        ROS_INFO("thetastaragr/flying_cost: %f", flying_cost_);
-        ROS_INFO("thetastaragr/flying_cost_default: %f", flying_cost_default_);
-        ROS_INFO("thetastaragr/ground_judge: %f", ground_judge_);
+        node_->get_parameter("thetastaragr.resolution", resolution_);
+        node_->get_parameter("thetastaragr.time_resolution", time_resolution_);
+        node_->get_parameter("thetastaragr.lambda_heuristic", lambda_heuristic_);
+        node_->get_parameter("thetastaragr.allocate_num", allocate_num_);
+        node_->get_parameter("thetastaragr.barrier", barrier_);
+        node_->get_parameter("thetastaragr.flying_cost", flying_cost_);
+        node_->get_parameter("thetastaragr.flying_cost_default", flying_cost_default_);
+        node_->get_parameter("thetastaragr.ground_judge", ground_judge_);
+
+        RCLCPP_INFO(node_->get_logger(), "thetastaragr.resolution: %f", resolution_);
+        RCLCPP_INFO(node_->get_logger(), "thetastaragr.time_resolution: %f", time_resolution_);
+        RCLCPP_INFO(node_->get_logger(), "thetastaragr.lambda_heuristic: %f", lambda_heuristic_);
+        RCLCPP_INFO(node_->get_logger(), "thetastaragr.allocate_num: %d", allocate_num_);
+        RCLCPP_INFO(node_->get_logger(), "thetastaragr.flying_cost: %f", flying_cost_);
+        RCLCPP_INFO(node_->get_logger(), "thetastaragr.flying_cost_default: %f", flying_cost_default_);
+        RCLCPP_INFO(node_->get_logger(), "thetastaragr.ground_judge: %f", ground_judge_);
 
         tie_breaker_ = 1.0 + 1.0 / 10000;
     }

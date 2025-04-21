@@ -8,21 +8,15 @@
 #include <set>
 #include <vector>
 
-#include <boost/functional/hash.hpp>
-
-// #include "plan_env/edt_environment.h"
 #include "plan_env/grid_map.h"
 #include "utils/LineOfSight.hpp"
 #include "utils/geometry_utils.hpp"
-#include "utils/heuristic.hpp"
 #include "utils/time.hpp"
 #include "utils/utils.hpp"
 
 namespace Planners {
 using namespace utils;
-using HeuristicFunction = std::function<unsigned int(Eigen::Vector3d, Eigen::Vector3d)>;
 
-class Heuristic;
 class Clock;
 
 class AlgorithmBase {
@@ -35,7 +29,6 @@ class AlgorithmBase {
   virtual void setParam() = 0;
   virtual void init() = 0;
   void reset();
-  void setHeuristic(HeuristicFunction heuristic_);
   virtual void setCostFactor(const float &_factor) { cost_weight_ = _factor; }
 
   bool detectCollision(Eigen::Vector3d &coordinates_);
@@ -60,7 +53,6 @@ class AlgorithmBase {
                                           const Eigen::Vector3d &_start,
                                           const unsigned int _sight_checks);
 
-  HeuristicFunction heuristic;
   GridMap::Ptr grid_map_;
 
   double cost_weight_{0};

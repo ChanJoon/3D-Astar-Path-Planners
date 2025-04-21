@@ -3,7 +3,7 @@
 namespace Planners {
 AStar::AStar(std::string _name = "astar") : AlgorithmBase(_name) {}
 
-AStar::AStar() : AlgorithmBase("astar") {}
+AStar::AStar(const rclcpp::Node::SharedPtr& node) : AlgorithmBase("astar"), node_(node) {}
 
 AStar::~AStar() {
   for (int i = 0; i < use_node_num_; i++) {
@@ -16,9 +16,9 @@ void AStar::init(){
   inv_time_resolution_ = 1.0 / time_resolution_;
 
   grid_map_->getRegion(origin_, map_size_3d_);
-  ROS_INFO("origin: %f, %f, %f", origin_(0), origin_(1), origin_(2));
-  ROS_INFO("map_size_3d: %f, %f, %f", map_size_3d_(0), map_size_3d_(1), map_size_3d_(2));
-  ROS_INFO("allocate_num_: %d", allocate_num_);
+  RCLCPP_INFO(node_->get_logger(), "origin: %f, %f, %f", origin_(0), origin_(1), origin_(2));
+  RCLCPP_INFO(node_->get_logger(), "map_size_3d: %f, %f, %f", map_size_3d_(0), map_size_3d_(1), map_size_3d_(2));
+  RCLCPP_INFO(node_->get_logger(), "allocate_num_: %d", allocate_num_);
 
   path_node_pool_.resize(allocate_num_);
   for (int i = 0; i < allocate_num_; i++) {
@@ -29,14 +29,18 @@ void AStar::init(){
 }
 
 void AStar::setParam() {
-  lnh_.param("astar/resolution", resolution_, -1.0);
-  lnh_.param("astar/time_resolution", time_resolution_, -1.0);
-  lnh_.param("astar/lambda_heuristic", lambda_heuristic_, -1.0);
-  lnh_.param("astar/allocate_num", allocate_num_, -1);
-  ROS_INFO("astar/resolution: %f", resolution_);
-  ROS_INFO("astar/time_resolution: %f", time_resolution_);
-  ROS_INFO("astar/lambda_heuristic: %f", lambda_heuristic_);
-  ROS_INFO("astar/allocate_num: %d", allocate_num_);
+  node_->declare_parameter("astar.resolution", -1.0);
+  node_->declare_parameter("astar.time_resolution", -1.0);
+  node_->declare_parameter("astar.lambda_heuristic", -1.0);
+  node_->declare_parameter("astar.allocate_num", -1);
+  node_->get_parameter("astar.resolution", resolution_);
+  node_->get_parameter("astar.time_resolution", time_resolution_);
+  node_->get_parameter("astar.lambda_heuristic", lambda_heuristic_);
+  node_->get_parameter("astar.allocate_num", allocate_num_);
+  RCLCPP_INFO(node_->get_logger(), "astar.resolution: %f", resolution_);
+  RCLCPP_INFO(node_->get_logger(), "astar.time_resolution: %f", time_resolution_);
+  RCLCPP_INFO(node_->get_logger(), "astar.lambda_heuristic: %f", lambda_heuristic_);
+  RCLCPP_INFO(node_->get_logger(), "astar.allocate_num: %d", allocate_num_);
   tie_breaker_ = 1.0 + 1.0 / 10000;
 }
 

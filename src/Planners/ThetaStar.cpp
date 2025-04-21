@@ -2,7 +2,7 @@
 
 namespace Planners
 {
-    ThetaStar::ThetaStar() : AStar("thetastar") {}
+    ThetaStar::ThetaStar(const rclcpp::Node::SharedPtr& node) : AStar("thetastar"), node_(node) {}
 
     ThetaStar::ThetaStar(std::string _name = "thetastar") : AStar(_name) {}
 
@@ -11,8 +11,8 @@ namespace Planners
         inv_time_resolution_ = 1.0 / time_resolution_;
       
         grid_map_->getRegion(origin_, map_size_3d_);
-        ROS_INFO("origin: %f, %f, %f", origin_(0), origin_(1), origin_(2));
-        ROS_INFO("map_size_3d: %f, %f, %f", map_size_3d_(0), map_size_3d_(1), map_size_3d_(2));
+        RCLCPP_INFO(node_->get_logger(), "origin: %f, %f, %f", origin_(0), origin_(1), origin_(2));
+        RCLCPP_INFO(node_->get_logger(), "map_size_3d: %f, %f, %f", map_size_3d_(0), map_size_3d_(1), map_size_3d_(2));
       
         path_node_pool_.resize(allocate_num_);
         for (int i = 0; i < allocate_num_; i++) {
@@ -23,14 +23,18 @@ namespace Planners
     }
 
     void ThetaStar::setParam() {
-        lnh_.param("thetastar/resolution", resolution_, -1.0);
-        lnh_.param("thetastar/time_resolution", time_resolution_, -1.0);
-        lnh_.param("thetastar/lambda_heuristic", lambda_heuristic_, -1.0);
-        lnh_.param("thetastar/allocate_num", allocate_num_, -1);
-        ROS_INFO("thetastar/resolution: %f", resolution_);
-        ROS_INFO("thetastar/time_resolution: %f", time_resolution_);
-        ROS_INFO("thetastar/lambda_heuristic: %f", lambda_heuristic_);
-        ROS_INFO("thetastar/allocate_num: %d", allocate_num_);
+        node_->declare_parameter("thetastar.resolution", -1.0);
+        node_->declare_parameter("thetastar.time_resolution", -1.0);
+        node_->declare_parameter("thetastar.lambda_heuristic", -1.0);
+        node_->declare_parameter("thetastar.allocate_num", -1);
+        node_->get_parameter("thetastar.resolution", resolution_);
+        node_->get_parameter("thetastar.time_resolution", time_resolution_);
+        node_->get_parameter("thetastar.lambda_heuristic", lambda_heuristic_);
+        node_->get_parameter("thetastar.allocate_num", allocate_num_);
+        RCLCPP_INFO(node_->get_logger(), "thetastar.resolution: %f", resolution_);
+        RCLCPP_INFO(node_->get_logger(), "thetastar.time_resolution: %f", time_resolution_);
+        RCLCPP_INFO(node_->get_logger(), "thetastar.lambda_heuristic: %f", lambda_heuristic_);
+        RCLCPP_INFO(node_->get_logger(), "thetastar.allocate_num: %d", allocate_num_);
         tie_breaker_ = 1.0 + 1.0 / 10000;
     }
 

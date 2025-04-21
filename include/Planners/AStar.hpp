@@ -3,11 +3,11 @@
 
 #include <Planners/AlgorithmBase.hpp>
 
-#include <ros/ros.h>
-#include <visualization_msgs/Marker.h>
+#include <rclcpp/rclcpp.hpp>
+#include <visualization_msgs/msg/marker.hpp>
 #include <pcl/point_cloud.h>
 #include <pcl/point_types.h>
-#include <pcl_ros/point_cloud.h>
+#include <sensor_msgs/msg/point_cloud2.hpp>
 
 namespace Planners{
 
@@ -15,7 +15,7 @@ namespace Planners{
     {
         
     public:
-        AStar();
+        AStar(const rclcpp::Node::SharedPtr& node);
         AStar(std::string _name);
         ~AStar();
 
@@ -31,8 +31,7 @@ namespace Planners{
         virtual inline void UpdateVertex(NodePtr current, NodePtr neighbor, const Eigen::Vector3d& d_pos, const Eigen::Vector3d& target);
 
         unsigned int line_of_sight_checks_{0};
-        
-        ros::NodeHandle lnh_{"~"};
+        rclcpp::Node::SharedPtr node_;
     };
 
 }

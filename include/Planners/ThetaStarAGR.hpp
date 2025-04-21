@@ -8,7 +8,7 @@ namespace Planners
     class ThetaStarAGR : public ThetaStar
     {
     public:
-        ThetaStarAGR();
+        ThetaStarAGR(const rclcpp::Node::SharedPtr& node);
         ThetaStarAGR(std::string _name);
 
         void init() override;
@@ -19,6 +19,7 @@ namespace Planners
         virtual inline void UpdateVertex(NodePtr current, NodePtr neighbor, const Eigen::Vector3d& d_pos, const Eigen::Vector3d& target) override;
 
         double flying_cost_, flying_cost_default_, ground_judge_, barrier_;
+        rclcpp::Node::SharedPtr node_;
     };
 }
 

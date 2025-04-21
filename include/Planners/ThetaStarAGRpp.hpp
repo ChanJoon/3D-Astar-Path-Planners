@@ -8,7 +8,7 @@ namespace Planners
     class ThetaStarAGRpp : public ThetaStar
     {
     public:
-        ThetaStarAGRpp();
+        ThetaStarAGRpp(const rclcpp::Node::SharedPtr& node);
         ThetaStarAGRpp(std::string _name);
 
         void setParam();
@@ -20,6 +20,7 @@ namespace Planners
 
         double flying_cost_, flying_cost_default_, ground_judge_, barrier_;
         double epsilon_;
+        rclcpp::Node::SharedPtr node_;
     };
 }
 

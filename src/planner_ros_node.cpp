@@ -1,72 +1,84 @@
 #include <iostream>
 
+#include <rclcpp/rclcpp.hpp>
+#include <visualization_msgs/msg/marker.hpp>
+#include <std_msgs/msg/color_rgba.hpp>
+#include <nav_msgs/msg/occupancy_grid.hpp>
+#include <nav_msgs/msg/path.hpp>
+#include <geometry_msgs/msg/pose_stamped.hpp>
+#include <sensor_msgs/msg/point_cloud2.hpp>
+
 #include "Planners/AStar.hpp"
 #include "Planners/ThetaStar.hpp"
 #include "Planners/ThetaStarAGR.hpp"
 #include "Planners/ThetaStarAGRpp.hpp"
 #include "utils/misc.hpp"
 #include "utils/geometry_utils.hpp"
-#include "utils/metrics.hpp"
 
-#include <ros/ros.h>
-
-#include <visualization_msgs/Marker.h>
-
-#include <pcl_ros/point_cloud.h>
-#include <pcl_ros/transforms.h>
-
-#include <nav_msgs/OccupancyGrid.h>
-#include <nav_msgs/Path.h>
-#include <geometry_msgs/PoseStamped.h>
-
-#include <heuristic_planners/GetPath.h>
-#include <heuristic_planners/SetAlgorithm.h>
+#include "heuristic_planners/srv/get_path.hpp"
+#include "heuristic_planners/srv/set_algorithm.hpp"
 
 
-class HeuristicPlannerROS
+class HeuristicPlannerROS : public rclcpp::Node
 {
 
 public:
-    HeuristicPlannerROS()
+    HeuristicPlannerROS() : Node("heuristic_planner_ros_node")
     {
-        
+        this->declare_parameter("algorithm", "astar");
+        this->declare_parameter("heuristic", "euclidean");
+        this->declare_parameter("resolution", 0.2f);
+        this->declare_parameter("inflate_map", true);
+        this->declare_parameter("frame_id", "map");
+        this->declare_parameter("marker_scale", 0.1);
+        this->declare_parameter("overlay_markers", false);
+        this->declare_parameter("ground_height", 0.0);
+    }
+
+    void init() {
         std::string algorithm_name;
-        lnh_.param("algorithm", algorithm_name, (std::string)"astar");
-        lnh_.param("heuristic", heuristic_, (std::string)"euclidean");
-        lnh_.param("resolution", resolution_, (float)0.2);
-        lnh_.param("inflate_map", inflate_, (bool)true);
-        lnh_.param("frame_id", frame_id, std::string("map"));
-        lnh_.param("marker_scale", marker_scale, (double)0.1);
-        lnh_.param("overlay_markers", overlay_markers_, (bool)false);
-        lnh_.param("ground_height", ground_height_, (double)0.0);
+        this->get_parameter("algorithm", algorithm_name);
+        this->get_parameter("heuristic", heuristic_);
+        this->get_parameter("resolution", resolution_);
+        this->get_parameter("inflate_map", inflate_);
+        this->get_parameter("frame_id", frame_id);
+        this->get_parameter("marker_scale", marker_scale);
+        this->get_parameter("overlay_markers", overlay_markers_);
+        this->get_parameter("ground_height", ground_height_);
         
         configureAlgorithm(algorithm_name, heuristic_);
-        
-        request_path_server_   = lnh_.advertiseService("request_path",  &HeuristicPlannerROS::requestPathService, this);
-        change_planner_server_ = lnh_.advertiseService("set_algorithm", &HeuristicPlannerROS::setAlgorithm, this);
 
-        rviz_trigger_callback_ = lnh_.subscribe("goal", 10, &HeuristicPlannerROS::rvizTriggerCallback, this);
+        request_path_server_   = this->create_service<heuristic_planners::srv::GetPath>(
+            "request_path",  std::bind(&HeuristicPlannerROS::requestPathService, this, std::placeholders::_1, std::placeholders::_2));
+        change_planner_server_ = this->create_service<heuristic_planners::srv::SetAlgorithm>(
+            "set_algorithm", std::bind(&HeuristicPlannerROS::setAlgorithm, this, std::placeholders::_1, std::placeholders::_2));
+
+        rviz_trigger_callback_ = this->create_subscription<geometry_msgs::msg::PoseStamped>(
+            "goal", rclcpp::QoS(1).best_effort(), std::bind(&HeuristicPlannerROS::rvizTriggerCallback, this, std::placeholders::_1));
         
-        line_markers_pub_  = lnh_.advertise<visualization_msgs::Marker>("path_line_markers", 1);
-        point_markers_pub_ = lnh_.advertise<visualization_msgs::Marker>("path_points_markers", 1);
-        global_path_pub_ = lnh_.advertise<nav_msgs::Path>("global_path", 1);
-        
+        line_markers_pub_  = this->create_publisher<visualization_msgs::msg::Marker>("path_line_markers", 1);
+        point_markers_pub_ = this->create_publisher<visualization_msgs::msg::Marker>("path_points_markers", 1);
+        global_path_pub_ = this->create_publisher<nav_msgs::msg::Path>("global_path", 1);
     }
 
 private:
 
-    bool setAlgorithm(heuristic_planners::SetAlgorithmRequest &_req, heuristic_planners::SetAlgorithmResponse &rep){
+    bool setAlgorithm(const std::shared_ptr<heuristic_planners::srv::SetAlgorithm::Request> _req,
+        std::shared_ptr<heuristic_planners::srv::SetAlgorithm::Response> _rep) {
         
-        configureAlgorithm(_req.algorithm.data, _req.heuristic.data);
-        rep.result.data = true;
+        configureAlgorithm(_req->algorithm.data, _req->heuristic.data);
+        _rep->result.data = true;
         return true;
     }
-    void rvizTriggerCallback(const geometry_msgs::PoseStampedConstPtr &msg) {
+    void rvizTriggerCallback(const geometry_msgs::msg::PoseStamped::SharedPtr msg) {
         algorithm_->reset();
         double init_x_, init_y_, init_z_;
-        lnh_.param("init_x", init_x_, 0.0);
-        lnh_.param("init_y", init_y_, 0.0);
-        lnh_.param("init_z", init_z_, 0.0);
+        this->declare_parameter("init_x", 0.0);
+        this->declare_parameter("init_y", 0.0);
+        this->declare_parameter("init_z", 0.0);
+        this->get_parameter("init_x", init_x_);
+        this->get_parameter("init_y", init_y_);
+        this->get_parameter("init_z", init_z_);
         
         Eigen::Vector3d start_pos(init_x_, init_y_, init_z_);
         Eigen::Vector3d goal_pos(msg->pose.position.x, msg->pose.position.y, ground_height_+0.01);
@@ -87,7 +99,7 @@ private:
             return;
         }
         
-        ROS_INFO("Planning path from [%f, %f, %f] to [%f, %f, %f]", 
+        RCLCPP_INFO(this->get_logger(), "Planning path from [%f, %f, %f] to [%f, %f, %f]", 
              start_pos.x(), start_pos.y(), start_pos.z(),
              goal_pos.x(), goal_pos.y(), goal_pos.z());
 
@@ -101,12 +113,12 @@ private:
             path_line_markers_.points.clear();
             path_points_markers_.points.clear();
             
-            nav_msgs::Path global_path;
+            nav_msgs::msg::Path global_path;
             global_path.header.frame_id = "world";
-            global_path.header.stamp = ros::Time::now();
+            global_path.header.stamp = this->get_clock()->now();
             
             for (const auto &it: path) {
-                geometry_msgs::PoseStamped pose;
+                geometry_msgs::msg::PoseStamped pose;
                 pose.header = global_path.header;
                 pose.pose.position.x = it.x();
                 pose.pose.position.y = it.y();
@@ -114,7 +126,7 @@ private:
                 pose.pose.orientation.w = 1.0;
                 global_path.poses.push_back(pose);
                 
-                geometry_msgs::Point point;
+                geometry_msgs::msg::Point point;
                 point.x = it.x();
                 point.y = it.y();
                 point.z = it.z();
@@ -124,35 +136,35 @@ private:
             
             publishMarker(path_line_markers_, line_markers_pub_);
             publishMarker(path_points_markers_, point_markers_pub_);
-            global_path_pub_.publish(global_path);
+            global_path_pub_->publish(global_path);
             
-            ROS_INFO("Path published successfully");
+            RCLCPP_INFO(this->get_logger(), "Path published successfully");
         } else {
-            ROS_WARN("Could not find a path between the specified points");
+            RCLCPP_WARN(this->get_logger(), "Could not find a path between the specified points");
         }
     }
     
-    bool requestPathService(heuristic_planners::GetPathRequest &_req, heuristic_planners::GetPathResponse &_rep){
+    bool requestPathService(
+        const std::shared_ptr<heuristic_planners::srv::GetPath::Request> _req,
+        std::shared_ptr<heuristic_planners::srv::GetPath::Response> _rep) {
         algorithm_->reset();
 
-        if( !_req.algorithm.data.empty() ){
-            if( !_req.heuristic.data.empty() ){
-                configureAlgorithm(_req.algorithm.data, _req.heuristic.data);
+        if( !_req->algorithm.data.empty() ){
+            if( !_req->heuristic.data.empty() ){
+                configureAlgorithm(_req->algorithm.data, _req->heuristic.data);
             }else{
-                configureAlgorithm(_req.algorithm.data, heuristic_);
+                configureAlgorithm(_req->algorithm.data, heuristic_);
             }
-        }else if( !_req.heuristic.data.empty() ){
-            configureHeuristic(_req.heuristic.data);
         }
 
-        ROS_INFO("Path requested, computing path");
+        RCLCPP_INFO(this->get_logger(), "Path requested, computing path");
         //delete previous markers
         publishMarker(path_line_markers_, line_markers_pub_);
         publishMarker(path_points_markers_, point_markers_pub_);
 
         //Astar coordinate list is std::vector<Eigen::Vector3i>
-        auto start_pos = Eigen::Vector3d((_req.start.x), (_req.start.y), (_req.start.z));
-        auto goal_pos = Eigen::Vector3d((_req.goal.x), (_req.goal.y), (_req.goal.z));
+        auto start_pos = Eigen::Vector3d((_req->start.x), (_req->start.y), (_req->start.z));
+        auto goal_pos = Eigen::Vector3d((_req->goal.x), (_req->goal.y), (_req->goal.z));
 
         if( algorithm_->detectCollision(start_pos) ){
             std::cout << start_pos << ": Start not valid" << std::endl;
@@ -180,13 +192,13 @@ private:
         }
 
         std::vector<double> times;
-        times.reserve(_req.tries.data);
-        int real_tries = _req.tries.data;
+        times.reserve(_req->tries.data);
+        int real_tries = _req->tries.data;
         if(real_tries == 0) real_tries = 1;
 
-        nav_msgs::Path global_path;
+        nav_msgs::msg::Path global_path;
         global_path.header.frame_id = "world";
-        global_path.header.stamp = ros::Time::now();
+        global_path.header.stamp = this->get_clock()->now();
 
         for(int i = 0; i < real_tries; ++i){
             auto path_data = algorithm_->findPath(start_pos, goal_pos, Eigen::Vector3d::Zero(), Eigen::Vector3d::Zero(), Eigen::Vector3d::Zero());
@@ -194,21 +206,21 @@ private:
             if( std::get<bool>(path_data["solved"]) ){
                 std::vector<Eigen::Vector3d> path;
                 try{
-                    _rep.time_spent.data           = std::get<double>(path_data["time_spent"] );
-                    _rep.time_spent.data /= 1000;
-                    times.push_back(_rep.time_spent.data);
+                    _rep->time_spent.data           = std::get<double>(path_data["time_spent"] );
+                    _rep->time_spent.data /= 1000;
+                    times.push_back(_rep->time_spent.data);
 
-                    if(_req.tries.data < 2 || i == ( _req.tries.data - 1) ){
-                        _rep.path_length.data          = std::get<double>(path_data["path_length"] );
-                        _rep.explored_nodes.data       = std::get<size_t>(path_data["explored_nodes"] );
-                        _rep.line_of_sight_checks.data = std::get<unsigned int>(path_data["line_of_sight_checks"] );
+                    if(_req->tries.data < 2 || i == ( _req->tries.data - 1) ){
+                        _rep->path_length.data          = std::get<double>(path_data["path_length"] );
+                        _rep->explored_nodes.data       = std::get<size_t>(path_data["explored_nodes"] );
+                        _rep->line_of_sight_checks.data = std::get<unsigned int>(path_data["line_of_sight_checks"] );
 
-                        _rep.total_cost1.data           = std::get<unsigned int>(path_data["total_cost1"] );
-                        _rep.total_cost2.data           = std::get<unsigned int>(path_data["total_cost2"] );
-                        _rep.h_cost.data               = std::get<unsigned int>(path_data["h_cost"]);
-                        _rep.g_cost1.data               = std::get<unsigned int>(path_data["g_cost1"]);
-                        _rep.g_cost2.data               = std::get<unsigned int>(path_data["g_cost2"]);
-                        _rep.c_cost.data               = std::get<unsigned int>(path_data["c_cost"]);
+                        _rep->total_cost1.data           = std::get<unsigned int>(path_data["total_cost1"] );
+                        _rep->total_cost2.data           = std::get<unsigned int>(path_data["total_cost2"] );
+                        _rep->h_cost.data               = std::get<unsigned int>(path_data["h_cost"]);
+                        _rep->g_cost1.data               = std::get<unsigned int>(path_data["g_cost1"]);
+                        _rep->g_cost2.data               = std::get<unsigned int>(path_data["g_cost2"]);
+                        _rep->c_cost.data               = std::get<unsigned int>(path_data["c_cost"]);
                     }
                     path = algorithm_->getPath();
                     algorithm_->reset();
@@ -218,10 +230,10 @@ private:
                     std::cerr << "Bad variant error: " << ex.what() << std::endl;
                 }
 
-                if(_req.tries.data < 2 || i == ( _req.tries.data - 1) ){
+                if(_req->tries.data < 2 || i == ( _req->tries.data - 1) ){
 
                     for(const auto &it: path){
-                        geometry_msgs::PoseStamped pose;
+                        geometry_msgs::msg::PoseStamped pose;
                         pose.header = global_path.header;
                         pose.pose.position.x = it.x();
                         pose.pose.position.y = it.y();
@@ -229,7 +241,7 @@ private:
                         pose.pose.orientation.w = 1.0;
                         global_path.poses.push_back(pose);
 
-                        geometry_msgs::Point point;
+                        geometry_msgs::msg::Point point;
                         point.x = it.x();
                         point.y = it.y();
                         point.z = it.z();
@@ -239,19 +251,19 @@ private:
 
                     publishMarker(path_line_markers_, line_markers_pub_);
                     publishMarker(path_points_markers_, point_markers_pub_);
-                    global_path_pub_.publish(global_path);
+                    global_path_pub_->publish(global_path);
 
                     path_line_markers_.points.clear();
                     path_points_markers_.points.clear();
                     global_path.poses.clear();
 
-                    ROS_INFO("Path calculated succesfully");
+                    RCLCPP_INFO(this->get_logger(), "Path calculated succesfully");
                 }
             }else{
-                ROS_INFO("Could not calculate path between request points");
+                RCLCPP_INFO(this->get_logger(), "Could not calculate path between request points");
             }
         }  
-        if(_req.tries.data > 2){
+        if(_req->tries.data > 2){
             auto av_time = std::accumulate(times.begin(), times.end(), 0.0) / times.size(); 
             std::cout << "Average Time: "      << av_time  << " milisecs" << std::endl;
             std::cout << "Average Frequency: " << 1000/av_time << std::endl;
@@ -262,31 +274,29 @@ private:
 
 
         if( algorithm_name == "astar" ){
-            ROS_INFO("Using A*");
-            algorithm_.reset(new Planners::AStar());
+            RCLCPP_INFO(this->get_logger(), "Using A*");
+            algorithm_ = std::make_unique<Planners::AStar>(shared_from_this());
             algorithm_->setParam();
         }else if ( algorithm_name == "thetastar" ){
-            ROS_INFO("Using Theta*");
-            algorithm_.reset(new Planners::ThetaStar());
+            RCLCPP_INFO(this->get_logger(), "Using Theta*");
+            algorithm_ = std::make_unique<Planners::ThetaStar>(shared_from_this());
             algorithm_->setParam();
         }else if ( algorithm_name == "thetastaragr" ){
-            ROS_INFO("Using Air-Ground Robot Aware Theta*");
-            algorithm_.reset(new Planners::ThetaStarAGR());
+            RCLCPP_INFO(this->get_logger(), "Using Air-Ground Robot Aware Theta*");
+            algorithm_ = std::make_unique<Planners::ThetaStarAGR>(shared_from_this());
             algorithm_->setParam();
         } else if ( algorithm_name == "thetastaragrpp" ) {
-            ROS_INFO("Using MH Theta*");
-            algorithm_.reset(new Planners::ThetaStarAGRpp());
+            RCLCPP_INFO(this->get_logger(), "Using MH Theta*");
+            algorithm_ = std::make_unique<Planners::ThetaStarAGRpp>(shared_from_this());
             algorithm_->setParam();
         } else{
-            ROS_WARN("Wrong algorithm name parameter. Using A* by default");
-            algorithm_.reset(new Planners::AStar());
+            RCLCPP_WARN(this->get_logger(), "Wrong algorithm name parameter. Using A* by default");
+            algorithm_ = std::make_unique<Planners::AStar>(shared_from_this());
             algorithm_->setParam();
         }
 
-        configureHeuristic(_heuristic);
-
         grid_map_.reset(new GridMap);
-        grid_map_->initMap(lnh_);
+        grid_map_->initMap(shared_from_this());
         algorithm_->setGridMap(grid_map_);
 
         algorithm_->init();
@@ -294,38 +304,16 @@ private:
         configMarkers(algorithm_name, frame_id, marker_scale);
 
     }
-    void configureHeuristic(const std::string &_heuristic){
-        
-        if( _heuristic == "euclidean" ){
-            algorithm_->setHeuristic(Planners::Heuristic::euclidean);
-            ROS_INFO("Using Euclidean Heuristics");
-        }else if( _heuristic == "euclidean_optimized" ){
-            algorithm_->setHeuristic(Planners::Heuristic::euclideanOptimized);
-            ROS_INFO("Using Optimized Euclidean Heuristics");
-        }else if( _heuristic == "manhattan" ){
-            algorithm_->setHeuristic(Planners::Heuristic::manhattan);
-            ROS_INFO("Using Manhattan Heuristics");
-        }else if( _heuristic == "octogonal" ){
-            algorithm_->setHeuristic(Planners::Heuristic::octagonal);
-            ROS_INFO("Using Octogonal Heuristics");
-        }else if( _heuristic == "dijkstra" ){
-            algorithm_->setHeuristic(Planners::Heuristic::dijkstra);     
-            ROS_INFO("Using Dijkstra Heuristics");
-        }else{
-            algorithm_->setHeuristic(Planners::Heuristic::euclidean);
-            ROS_WARN("Wrong Heuristic param. Using Euclidean Heuristics by default");
-        }
-    }
 
     void configMarkers(const std::string &_ns, const std::string &_frame, const double &_scale){
 
         path_line_markers_.ns = _ns;
         path_line_markers_.header.frame_id = _frame;
-        path_line_markers_.header.stamp = ros::Time::now();
+        path_line_markers_.header.stamp = this->get_clock()->now();
         path_line_markers_.id = rand();
-        path_line_markers_.lifetime = ros::Duration(500);
-        path_line_markers_.type = visualization_msgs::Marker::LINE_STRIP;
-        path_line_markers_.action = visualization_msgs::Marker::ADD;
+        path_line_markers_.lifetime = rclcpp::Duration::from_seconds(500);
+        path_line_markers_.type = visualization_msgs::msg::Marker::LINE_STRIP;
+        path_line_markers_.action = visualization_msgs::msg::Marker::ADD;
         path_line_markers_.pose.orientation.w = 1;
 
         path_line_markers_.color.r = 0.0;
@@ -337,11 +325,11 @@ private:
 
         path_points_markers_.ns = _ns;
         path_points_markers_.header.frame_id = _frame;
-        path_points_markers_.header.stamp = ros::Time::now();
+        path_points_markers_.header.stamp = this->get_clock()->now();
         path_points_markers_.id = rand();
-        path_points_markers_.lifetime = ros::Duration(500);
-        path_points_markers_.type = visualization_msgs::Marker::POINTS;
-        path_points_markers_.action = visualization_msgs::Marker::ADD;
+        path_points_markers_.lifetime = rclcpp::Duration::from_seconds(500);
+        path_points_markers_.type = visualization_msgs::msg::Marker::POINTS;
+        path_points_markers_.action = visualization_msgs::msg::Marker::ADD;
         path_points_markers_.pose.orientation.w = 1;
         path_points_markers_.color.r = 0.0;
         path_points_markers_.color.g = 1.0;
@@ -352,25 +340,25 @@ private:
         path_points_markers_.scale.z = _scale;
 
     }
-    void publishMarker(visualization_msgs::Marker &_marker, const ros::Publisher &_pub){
+    void publishMarker(visualization_msgs::msg::Marker &_marker, const rclcpp::Publisher<visualization_msgs::msg::Marker>::SharedPtr &_pub){
         
         //Clear previous marker
         if( !overlay_markers_ ){
-            _marker.action = visualization_msgs::Marker::DELETEALL;
-            _pub.publish(_marker);
+            _marker.action = visualization_msgs::msg::Marker::DELETEALL;
+            _pub->publish(_marker);
         }else{
             path_points_markers_.id           = rand();
-            path_points_markers_.header.stamp = ros::Time::now();
+            path_points_markers_.header.stamp = this->get_clock()->now();
             setRandomColor(path_points_markers_.color);
 
             path_line_markers_.id             = rand();
-            path_line_markers_.header.stamp   = ros::Time::now();
+            path_line_markers_.header.stamp   = this->get_clock()->now();
             setRandomColor(path_line_markers_.color);
         }
-        _marker.action = visualization_msgs::Marker::ADD;
-        _pub.publish(_marker);
+        _marker.action = visualization_msgs::msg::Marker::ADD;
+        _pub->publish(_marker);
     }
-    void setRandomColor(std_msgs::ColorRGBA &_color, unsigned int _n_div = 20){
+    void setRandomColor(std_msgs::msg::ColorRGBA &_color, unsigned int _n_div = 20){
         //Using golden angle approximation
         const double golden_angle = 180 * (3 - sqrt(5));
         double hue = color_id_ * golden_angle + 60;
@@ -386,16 +374,19 @@ private:
     }
 
 
-    ros::NodeHandle lnh_{"~"};
-    ros::ServiceServer request_path_server_, change_planner_server_;
-    ros::Publisher line_markers_pub_, point_markers_pub_, global_path_pub_;
-    ros::Subscriber rviz_trigger_callback_;
+    std::shared_ptr<rclcpp::Publisher<visualization_msgs::msg::Marker>> line_markers_pub_;
+    std::shared_ptr<rclcpp::Publisher<visualization_msgs::msg::Marker>> point_markers_pub_;
+    std::shared_ptr<rclcpp::Publisher<nav_msgs::msg::Path>> global_path_pub_;
+  
+    std::shared_ptr<rclcpp::Service<heuristic_planners::srv::GetPath>> request_path_server_;
+    std::shared_ptr<rclcpp::Service<heuristic_planners::srv::SetAlgorithm>> change_planner_server_;
+    std::shared_ptr<rclcpp::Subscription<geometry_msgs::msg::PoseStamped>> rviz_trigger_callback_;
 
     GridMap::Ptr grid_map_;
 
     std::unique_ptr<Planners::AlgorithmBase> algorithm_;
         
-    visualization_msgs::Marker path_line_markers_, path_points_markers_;
+    visualization_msgs::msg::Marker path_line_markers_, path_points_markers_;
     
     //Parameters
     float resolution_;
@@ -411,10 +402,12 @@ private:
 };
 int main(int argc, char **argv)
 {
-    ros::init(argc, argv, "heuristic_planner_ros_node");
+    rclcpp::init(argc, argv);
 
-    HeuristicPlannerROS heuristic_planner_ros;
-    ros::spin();
+    auto node = std::make_shared<HeuristicPlannerROS>();
+    node->init();
+    rclcpp::spin(node);
+    rclcpp::shutdown();
 
-return 0;
+    return 0;
 }
