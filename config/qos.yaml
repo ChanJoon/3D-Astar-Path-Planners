@@ -1,0 +1,16 @@
+topics:
+  /path_line_markers:
+    reliability: best_effort
+    history: keep_all
+
+  /path_points_markers:
+    reliability: best_effort
+    history: keep_all
+
+  /global_path:
+    reliability: best_effort
+    history: keep_all
+
+  /odom:
+    reliability: best_effort
+    history: keep_all

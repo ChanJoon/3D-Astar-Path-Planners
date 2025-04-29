@@ -14,6 +14,7 @@
 #include "Planners/ThetaStarAGRpp.hpp"
 #include "utils/misc.hpp"
 #include "utils/geometry_utils.hpp"
+#include "utils/QoSHelper.hpp"
 
 #include "heuristic_planners/srv/get_path.hpp"
 #include "heuristic_planners/srv/set_algorithm.hpp"
@@ -23,7 +24,7 @@ class HeuristicPlannerROS : public rclcpp::Node
 {
 
 public:
-    HeuristicPlannerROS() : Node("heuristic_planner_ros_node")
+    HeuristicPlannerROS() : Node("heuristic_planner_ros_node"), qos_helper_("heuristic_planners", "config/qos.yaml")
     {
         this->declare_parameter("algorithm", "astar");
         this->declare_parameter("heuristic", "euclidean");
@@ -33,6 +34,12 @@ public:
         this->declare_parameter("marker_scale", 0.1);
         this->declare_parameter("overlay_markers", false);
         this->declare_parameter("ground_height", 0.0);
+        this->declare_parameter("init_x", 0.0);
+        this->declare_parameter("init_y", 0.0);
+        this->declare_parameter("init_z", 0.0);
+        this->get_parameter("init_x", init_x_);
+        this->get_parameter("init_y", init_y_);
+        this->get_parameter("init_z", init_z_);
     }
 
     void init() {
@@ -56,12 +63,33 @@ public:
         rviz_trigger_callback_ = this->create_subscription<geometry_msgs::msg::PoseStamped>(
             "goal", rclcpp::QoS(1).best_effort(), std::bind(&HeuristicPlannerROS::rvizTriggerCallback, this, std::placeholders::_1));
         
-        line_markers_pub_  = this->create_publisher<visualization_msgs::msg::Marker>("path_line_markers", 1);
-        point_markers_pub_ = this->create_publisher<visualization_msgs::msg::Marker>("path_points_markers", 1);
-        global_path_pub_ = this->create_publisher<nav_msgs::msg::Path>("global_path", 1);
+        line_markers_pub_  = this->create_publisher<visualization_msgs::msg::Marker>(
+            "path_line_markers", qos_helper_.getQoSForTopic("path_line_markers"));
+        point_markers_pub_ = this->create_publisher<visualization_msgs::msg::Marker>(
+            "path_points_markers", qos_helper_.getQoSForTopic("path_points_markers"));
+        global_path_pub_ = this->create_publisher<nav_msgs::msg::Path>(
+            "global_path", qos_helper_.getQoSForTopic("global_path"));
+
+        pseudo_odom_pub_ = this->create_publisher<nav_msgs::msg::Odometry>(
+            "odom", qos_helper_.getQoSForTopic("odom"));
+        tmp_timer_ = this->create_wall_timer(
+            std::chrono::milliseconds(100), std::bind(&HeuristicPlannerROS::timerCallback, this));
     }
 
 private:
+
+    void timerCallback() {
+        if (algorithm_init_) {
+            nav_msgs::msg::Odometry odom_msg;
+            odom_msg.header.frame_id = "world";
+            odom_msg.header.stamp = this->get_clock()->now();
+            odom_msg.pose.pose.position.x = init_x_;
+            odom_msg.pose.pose.position.y = init_y_;
+            odom_msg.pose.pose.position.z = ground_height_;
+            odom_msg.pose.pose.orientation.w = 1.0;
+            pseudo_odom_pub_->publish(odom_msg);
+        }
+    }
 
     bool setAlgorithm(const std::shared_ptr<heuristic_planners::srv::SetAlgorithm::Request> _req,
         std::shared_ptr<heuristic_planners::srv::SetAlgorithm::Response> _rep) {
@@ -72,16 +100,9 @@ private:
     }
     void rvizTriggerCallback(const geometry_msgs::msg::PoseStamped::SharedPtr msg) {
         algorithm_->reset();
-        double init_x_, init_y_, init_z_;
-        this->declare_parameter("init_x", 0.0);
-        this->declare_parameter("init_y", 0.0);
-        this->declare_parameter("init_z", 0.0);
-        this->get_parameter("init_x", init_x_);
-        this->get_parameter("init_y", init_y_);
-        this->get_parameter("init_z", init_z_);
-        
+
         Eigen::Vector3d start_pos(init_x_, init_y_, init_z_);
-        Eigen::Vector3d goal_pos(msg->pose.position.x, msg->pose.position.y, ground_height_+0.01);
+        Eigen::Vector3d goal_pos(msg->pose.position.x, msg->pose.position.y, 3.0);
         
         Eigen::Vector3d origin, size;
         grid_map_->getRegion(origin, size);
@@ -302,7 +323,7 @@ private:
         algorithm_->init();
     
         configMarkers(algorithm_name, frame_id, marker_scale);
-
+        algorithm_init_ = true;
     }
 
     void configMarkers(const std::string &_ns, const std::string &_frame, const double &_scale){
@@ -392,12 +413,19 @@ private:
     float resolution_;
     std::string frame_id;
     double marker_scale;
+    double init_x_, init_y_, init_z_;
 
     bool inflate_{false};
     bool overlay_markers_{0};
     unsigned int color_id_{0};
     std::string heuristic_;
     double ground_height_;
+
+    QoSHelper qos_helper_;
+
+    rclcpp::Publisher<nav_msgs::msg::Odometry>::SharedPtr pseudo_odom_pub_;
+    rclcpp::TimerBase::SharedPtr tmp_timer_;
+    bool algorithm_init_{false};
 
 };
 int main(int argc, char **argv)

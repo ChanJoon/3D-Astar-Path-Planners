@@ -3,6 +3,7 @@ project(heuristic_planners)
 
 # Required for message generation
 find_package(ament_cmake REQUIRED)
+find_package(ament_index_cpp REQUIRED)
 find_package(rclcpp REQUIRED)
 find_package(std_msgs REQUIRED)
 find_package(geometry_msgs REQUIRED)
@@ -11,11 +12,12 @@ find_package(visualization_msgs REQUIRED)
 find_package(pcl_conversions REQUIRED)
 find_package(cv_bridge REQUIRED)
 find_package(sensor_msgs REQUIRED)
+find_package(rosidl_typesupport_cpp REQUIRED)
+find_package(rosidl_default_generators REQUIRED)
 find_package(Eigen3 REQUIRED)
 find_package(PCL REQUIRED COMPONENTS common io)
 find_package(OpenMP REQUIRED)
-find_package(rosidl_typesupport_cpp REQUIRED)
-find_package(rosidl_default_generators REQUIRED)
+find_package(yaml-cpp REQUIRED)
 
 # Enable C++17
 add_compile_options(-std=c++17 -Wall -Wextra -pedantic)
@@ -36,6 +38,7 @@ include_directories(
 set(UTILS_SOURCES
   src/utils/geometry_utils.cpp
   src/utils/LineOfSight.cpp
+  src/utils/QoSHelper.cpp
 )
 
 add_library(PlanEnv
@@ -67,9 +70,9 @@ ament_target_dependencies(ThetaStarAGRpp rclcpp PCL)
 # =================== Executables ===================
 add_executable(planner_ros_node src/planner_ros_node.cpp)
 target_link_libraries(planner_ros_node
-  AlgorithmBase AStar ThetaStar ThetaStarAGR ThetaStarAGRpp PlanEnv
+  AlgorithmBase AStar ThetaStar ThetaStarAGR ThetaStarAGRpp PlanEnv yaml-cpp
 )
-ament_target_dependencies(planner_ros_node rclcpp PCL cv_bridge rosidl_typesupport_cpp)
+ament_target_dependencies(planner_ros_node rclcpp PCL cv_bridge rosidl_typesupport_cpp ament_index_cpp)
 target_include_directories(planner_ros_node PUBLIC
   $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}/rosidl_generator_cpp>
   $<INSTALL_INTERFACE:include>
@@ -85,7 +88,7 @@ install(DIRECTORY include/
   DESTINATION include/${PROJECT_NAME}
 )
 
-install(DIRECTORY launch rviz
+install(DIRECTORY launch rviz config
   DESTINATION share/${PROJECT_NAME}
 )
 
