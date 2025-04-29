@@ -73,7 +73,7 @@ def generate_launch_description():
             'thetastaragr.ground_judge': 0.1,
             'thetastaragr.barrier': 2.0,
             'thetastaragr.flying_cost': 10.0,
-            'thetastaragr.flying_cost_default': 0,
+            'thetastaragr.flying_cost_default': 0.0,
             'thetastaragr.epsilon': 0.1,
 
             # grid_map params
