@@ -9,8 +9,9 @@ topics:
 
   /global_path:
     reliability: best_effort
+    durability: transient_local
     history: keep_all
 
   /odom:
-    reliability: best_effort
-    history: keep_all
+    reliability: reliable
+    history: last

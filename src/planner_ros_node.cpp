@@ -71,9 +71,11 @@ public:
             "global_path", qos_helper_.getQoSForTopic("global_path"));
 
         pseudo_odom_pub_ = this->create_publisher<nav_msgs::msg::Odometry>(
-            "odom", qos_helper_.getQoSForTopic("odom"));
+            "odom", qos_helper_.getQoSForTopic("/odom"));
         tmp_timer_ = this->create_wall_timer(
             std::chrono::milliseconds(100), std::bind(&HeuristicPlannerROS::timerCallback, this));
+        global_path_timer_ = this->create_wall_timer(
+            std::chrono::milliseconds(100), std::bind(&HeuristicPlannerROS::rePub, this));
     }
 
 private:
@@ -91,6 +93,12 @@ private:
         }
     }
 
+    void rePub() {
+        if (global_path_.poses.size() > 0) {
+            global_path_pub_->publish(global_path_);
+        }
+    }
+
     bool setAlgorithm(const std::shared_ptr<heuristic_planners::srv::SetAlgorithm::Request> _req,
         std::shared_ptr<heuristic_planners::srv::SetAlgorithm::Response> _rep) {
         
@@ -102,7 +110,7 @@ private:
         algorithm_->reset();
 
         Eigen::Vector3d start_pos(init_x_, init_y_, init_z_);
-        Eigen::Vector3d goal_pos(msg->pose.position.x, msg->pose.position.y, 3.0);
+        Eigen::Vector3d goal_pos(msg->pose.position.x, msg->pose.position.y, ground_height_+0.01);
         
         Eigen::Vector3d origin, size;
         grid_map_->getRegion(origin, size);
@@ -133,19 +141,19 @@ private:
             // Publish path as markers
             path_line_markers_.points.clear();
             path_points_markers_.points.clear();
+            global_path_.poses.clear();
             
-            nav_msgs::msg::Path global_path;
-            global_path.header.frame_id = "world";
-            global_path.header.stamp = this->get_clock()->now();
+            global_path_.header.frame_id = "world";
+            global_path_.header.stamp = this->get_clock()->now();
             
             for (const auto &it: path) {
                 geometry_msgs::msg::PoseStamped pose;
-                pose.header = global_path.header;
+                pose.header = global_path_.header;
                 pose.pose.position.x = it.x();
                 pose.pose.position.y = it.y();
                 pose.pose.position.z = it.z();
                 pose.pose.orientation.w = 1.0;
-                global_path.poses.push_back(pose);
+                global_path_.poses.push_back(pose);
                 
                 geometry_msgs::msg::Point point;
                 point.x = it.x();
@@ -157,7 +165,6 @@ private:
             
             publishMarker(path_line_markers_, line_markers_pub_);
             publishMarker(path_points_markers_, point_markers_pub_);
-            global_path_pub_->publish(global_path);
             
             RCLCPP_INFO(this->get_logger(), "Path published successfully");
         } else {
@@ -179,6 +186,10 @@ private:
         }
 
         RCLCPP_INFO(this->get_logger(), "Path requested, computing path");
+
+        path_line_markers_.points.clear();
+        path_points_markers_.points.clear();
+        global_path_.poses.clear();
         //delete previous markers
         publishMarker(path_line_markers_, line_markers_pub_);
         publishMarker(path_points_markers_, point_markers_pub_);
@@ -217,9 +228,8 @@ private:
         int real_tries = _req->tries.data;
         if(real_tries == 0) real_tries = 1;
 
-        nav_msgs::msg::Path global_path;
-        global_path.header.frame_id = "world";
-        global_path.header.stamp = this->get_clock()->now();
+        global_path_.header.frame_id = "world";
+        global_path_.header.stamp = this->get_clock()->now();
 
         for(int i = 0; i < real_tries; ++i){
             auto path_data = algorithm_->findPath(start_pos, goal_pos, Eigen::Vector3d::Zero(), Eigen::Vector3d::Zero(), Eigen::Vector3d::Zero());
@@ -255,12 +265,12 @@ private:
 
                     for(const auto &it: path){
                         geometry_msgs::msg::PoseStamped pose;
-                        pose.header = global_path.header;
+                        pose.header = global_path_.header;
                         pose.pose.position.x = it.x();
                         pose.pose.position.y = it.y();
                         pose.pose.position.z = it.z();
                         pose.pose.orientation.w = 1.0;
-                        global_path.poses.push_back(pose);
+                        global_path_.poses.push_back(pose);
 
                         geometry_msgs::msg::Point point;
                         point.x = it.x();
@@ -272,11 +282,6 @@ private:
 
                     publishMarker(path_line_markers_, line_markers_pub_);
                     publishMarker(path_points_markers_, point_markers_pub_);
-                    global_path_pub_->publish(global_path);
-
-                    path_line_markers_.points.clear();
-                    path_points_markers_.points.clear();
-                    global_path.poses.clear();
 
                     RCLCPP_INFO(this->get_logger(), "Path calculated succesfully");
                 }
@@ -425,6 +430,8 @@ private:
 
     rclcpp::Publisher<nav_msgs::msg::Odometry>::SharedPtr pseudo_odom_pub_;
     rclcpp::TimerBase::SharedPtr tmp_timer_;
+    rclcpp::TimerBase::SharedPtr global_path_timer_;
+    nav_msgs::msg::Path global_path_;
     bool algorithm_init_{false};
 
 };

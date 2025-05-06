@@ -133,13 +133,16 @@ void GridMap::initMap(const std::shared_ptr<rclcpp::Node>& node)
   md_.cam2body_ << 0.0, 0.0, 1.0, 0.0, -1.0, 0.0, 0.0, 0.0, 0.0, -1.0, 0.0, -0.02, 0.0, 0.0, 0.0, 1.0;
 
   /* init callback */
+  rclcpp::QoS reliable_qos(rclcpp::KeepLast(10));
+  reliable_qos.reliable();
+  reliable_qos.durability_volatile();
 
   // use depth image and pose stamped or odometry
   depth_sub_ = std::make_shared<message_filters::Subscriber<sensor_msgs::msg::Image>>(node_.get(), "/grid_map/depth");
 
   if (mp_.pose_type_ == POSE_STAMPED)
   {
-    pose_sub_ = std::make_shared<message_filters::Subscriber<geometry_msgs::msg::PoseStamped>>(node_.get(), "/grid_map/pose", rmw_qos_profile_sensor_data);
+    pose_sub_ = std::make_shared<message_filters::Subscriber<geometry_msgs::msg::PoseStamped>>(node_.get(), "/grid_map/pose");
 
     sync_image_pose_ = 
         std::make_shared<message_filters::Synchronizer<SyncPolicyImagePose>>(SyncPolicyImagePose(100), *depth_sub_, *pose_sub_);
@@ -147,7 +150,7 @@ void GridMap::initMap(const std::shared_ptr<rclcpp::Node>& node)
   }
   else if (mp_.pose_type_ == ODOMETRY)
   {
-    odom_sub_ = std::make_shared<message_filters::Subscriber<nav_msgs::msg::Odometry>>(node_.get(), "/grid_map/odom", rmw_qos_profile_sensor_data);
+    odom_sub_ = std::make_shared<message_filters::Subscriber<nav_msgs::msg::Odometry>>(node_.get(), "/grid_map/odom");
 
     sync_image_odom_ = 
         std::make_shared<message_filters::Synchronizer<SyncPolicyImageOdom>>(SyncPolicyImageOdom(100), *depth_sub_, *odom_sub_);
@@ -155,8 +158,8 @@ void GridMap::initMap(const std::shared_ptr<rclcpp::Node>& node)
   }
 
   // use odometry and point cloud
-  indep_cloud_sub_ = node_->create_subscription<sensor_msgs::msg::PointCloud2>("/grid_map/cloud", rclcpp::SensorDataQoS(), std::bind(&GridMap::cloudCallback, this, std::placeholders::_1));
-  indep_odom_sub_ = node_->create_subscription<nav_msgs::msg::Odometry>("/grid_map/odom", rclcpp::SensorDataQoS(), std::bind(&GridMap::odomCallback, this, std::placeholders::_1));
+  indep_cloud_sub_ = node_->create_subscription<sensor_msgs::msg::PointCloud2>("/grid_map/cloud", reliable_qos, std::bind(&GridMap::cloudCallback, this, std::placeholders::_1));
+  indep_odom_sub_ = node_->create_subscription<nav_msgs::msg::Odometry>("/grid_map/odom", reliable_qos, std::bind(&GridMap::odomCallback, this, std::placeholders::_1));
 
   occ_timer_ = node_->create_wall_timer(std::chrono::duration<double>(0.05), std::bind(&GridMap::updateOccupancyCallback, this));
   vis_timer_ = node_->create_wall_timer(std::chrono::duration<double>(0.05), std::bind(&GridMap::visCallback, this));
