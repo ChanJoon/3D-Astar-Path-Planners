@@ -5,22 +5,21 @@
 
 ## Quick-Start
 
-1. **Install ROS [Melodic](http://wiki.ros.org/melodic/Installation/Ubuntu) or [Noetic](http://wiki.ros.org/noetic/Installation/Ubuntu)**
+1. **Install ROS2 [Foxy](https://docs.ros.org/en/foxy/Installation.html) or [Humble](https://docs.ros.org/en/humble/Installation.html)**
 
 2. **Downlaod Heuristic Path Planners**
   Clone the repo, install dependencies with rosdep and compile it with catkin
 
 ```bash
-mkdir -p ~/catkin_ws/src
-cd ~/catkin_ws/src
+mkdir -p ~/ros2_ws/src
+cd ~/ros2_ws/src
 
-# Clone the UAV simulator and this planner
-git clone git@github.com:ChanJoon/uav_simulator.git
-git clone git@github.com:ChanJoon/3D-Astar-Path-Planners.git
+# Clone the random map generator and this planner
+git clone git@github.com:ChanJoon/map_generator.git
+git clone git@github.com:ChanJoon/3D-Astar-Path-Planners.git -b humble
 
 cd ..
-rosdep update && rosdep install --from-paths src/ -y -r
-catkin_make
+colcon build --symlink-install
 ```
 
 3. **Launch a demo a request a path**
@@ -29,20 +28,10 @@ catkin_make
 
 In one terminal:
 ```bash
-roslaunch heuristic_planners planner.launch algorithm_name:=thetastar
+ros2 launch heuristic_planners planner.launch algorithm_name:=thetastar
 ```
 
-Open another terminal and call an example start and goal request: 
-```bash
-rosservice call /planner_ros_node/request_path "start:
-  x: 0.0
-  y: 0.0
-  z: 0.0
-goal:
-  x: 40.0
-  y: 40.0
-  z: 4.0" 
-```
+In RViz, set a 2D goal using the `2D Nav Goal` tool.
 
 
 ### ✨ Key Differences from Original Version

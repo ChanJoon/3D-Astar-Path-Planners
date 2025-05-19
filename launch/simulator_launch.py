@@ -22,7 +22,7 @@ def generate_launch_description():
     random_forest_node = Node(
         package='map_generator',
         executable='random_forest',
-        name='random_forest',
+        name='map_generator_node',
         output='screen',
         parameters=[{
             'init_state_x': LaunchConfiguration('init_x'),
@@ -47,67 +47,12 @@ def generate_launch_description():
             'sensing/rate': 10.0,
         }],
         remappings=[
-            ('~odometry', LaunchConfiguration('odom_topic'))
+            ('odometry', LaunchConfiguration('odom_topic'))
         ]
     )
 
-    poscmd_2_odom_node = Node(
-        package='poscmd_2_odom',
-        executable='poscmd_2_odom',
-        name='drone_poscmd_2_odom',
-        output='screen',
-        parameters=[{
-            'init_x': LaunchConfiguration('init_x'),
-            'init_y': LaunchConfiguration('init_y'),
-            'init_z': LaunchConfiguration('init_z'),
-        }],
-        remappings=[
-            ('~command', '/position_cmd'),
-            ('~odometry', LaunchConfiguration('odom_topic'))
-        ]
-    )
 
-    odom_visualization_node = Node(
-        package='odom_visualization',
-        executable='odom_visualization',
-        name='odom_visualization',
-        output='screen',
-        parameters=[{
-            'color/a': 1.0,
-            'color/r': 1.0,
-            'color/g': 1.0,
-            'color/b': 1.0,
-            'covariance_scale': 100.0,
-            'robot_scale': 1.0,
-            'tf45': True
-        }],
-        remappings=[
-            ('~odom', LaunchConfiguration('odom_topic'))
-        ]
-    )
-
-    pcl_render_node = Node(
-        package='local_sensing_node',
-        executable='pcl_render_node',
-        name='pcl_render_node',
-        output='screen',
-        parameters=[
-            {'sensing_horizon': 50.0,
-             'sensing_rate': 30.0,
-             'estimation_rate': 30.0,
-             'map/x_size': LaunchConfiguration('map_size_x_'),
-             'map/y_size': LaunchConfiguration('map_size_y_'),
-             'map/z_size': LaunchConfiguration('map_size_z_')}
-        ],
-        remappings=[
-            ('~global_map', '/map_generator/global_cloud'),
-            ('~odometry', LaunchConfiguration('odom_topic')),
-        ]
-    )
 
     return LaunchDescription(args + [
         random_forest_node,
-        poscmd_2_odom_node,
-        odom_visualization_node,
-        pcl_render_node
     ])

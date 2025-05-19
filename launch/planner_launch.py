@@ -21,9 +21,9 @@ def generate_launch_description():
         DeclareLaunchArgument('heuristic', default_value='euclidean'),
         DeclareLaunchArgument('overlay_markers', default_value='false'),
         DeclareLaunchArgument('cost_weight', default_value='4.0'),
-        DeclareLaunchArgument('odom_topic', default_value='/visual_slam/odom'),
-        DeclareLaunchArgument('camera_pose_topic', default_value='/pcl_render_node/camera_pose'),
-        DeclareLaunchArgument('depth_topic', default_value='/pcl_render_node/depth'),
+        DeclareLaunchArgument('odom_topic', default_value='/odom'),
+        DeclareLaunchArgument('camera_pose_topic', default_value='/camera_pose'),
+        DeclareLaunchArgument('depth_topic', default_value='/depth/color/points'),
         DeclareLaunchArgument('cloud_topic', default_value='/map_generator/global_cloud'),
         DeclareLaunchArgument('cx', default_value='321.04638671875'),
         DeclareLaunchArgument('cy', default_value='243.44969177246094'),
@@ -112,7 +112,7 @@ def generate_launch_description():
             'grid_map.frame_id': 'world'
         }],
         remappings=[
-            ('/grid_map/cloud', '/pcl_render_node/cloud'),
+            ('/grid_map/cloud', LaunchConfiguration('cloud_topic')),
             ('/grid_map/odom', LaunchConfiguration('odom_topic')),
             ('/grid_map/pose', LaunchConfiguration('camera_pose_topic')),
             ('/grid_map/depth', LaunchConfiguration('depth_topic')),
@@ -134,26 +134,26 @@ def generate_launch_description():
     )
 
 
-    # simulator_launch = IncludeLaunchDescription(
-    #     PythonLaunchDescriptionSource(
-    #         PathJoinSubstitution([
-    #             FindPackageShare('heuristic_planners'),
-    #             'launch',
-    #             'simulator_launch.py'
-    #         ])
-    #     ),
-    #     launch_arguments={
-    #         'map_name': LaunchConfiguration('map_name'),
-    #         'map_size_x_': LaunchConfiguration('world_size_x'),
-    #         'map_size_y_': LaunchConfiguration('world_size_y'),
-    #         'map_size_z_': LaunchConfiguration('world_size_z'),
-    #         'init_x': LaunchConfiguration('init_x'),
-    #         'init_y': LaunchConfiguration('init_y'),
-    #         'init_z': LaunchConfiguration('init_z'),
-    #         'c_num': '0',
-    #         'p_num': '80',
-    #         'odom_topic': LaunchConfiguration('odom_topic')
-    #     }.items()
-    # )
+    simulator_launch = IncludeLaunchDescription(
+        PythonLaunchDescriptionSource(
+            PathJoinSubstitution([
+                FindPackageShare('heuristic_planners'),
+                'launch',
+                'simulator_launch.py'
+            ])
+        ),
+        launch_arguments={
+            'map_name': LaunchConfiguration('map_name'),
+            'map_size_x_': LaunchConfiguration('world_size_x'),
+            'map_size_y_': LaunchConfiguration('world_size_y'),
+            'map_size_z_': LaunchConfiguration('world_size_z'),
+            'init_x': LaunchConfiguration('init_x'),
+            'init_y': LaunchConfiguration('init_y'),
+            'init_z': LaunchConfiguration('init_z'),
+            'c_num': '0',
+            'p_num': '80',
+            'odom_topic': LaunchConfiguration('odom_topic')
+        }.items()
+    )
 
-    return LaunchDescription(declared_args + [planner_node, rviz_node])
+    return LaunchDescription(declared_args + [planner_node, rviz_node, simulator_launch])
