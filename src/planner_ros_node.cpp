@@ -1,4 +1,7 @@
 #include <iostream>
+#include <memory>
+#include <algorithm>
+#include <numeric>
 
 #include "Planners/AStar.hpp"
 #include "Planners/ThetaStar.hpp"
@@ -9,19 +12,18 @@
 #include "utils/metrics.hpp"
 
 #include <ros/ros.h>
-
+#include <nav_msgs/OccupancyGrid.h>
+#include <nav_msgs/Path.h>
+#include <nav_msgs/Odometry.h>
+#include <geometry_msgs/PoseStamped.h>
 #include <visualization_msgs/Marker.h>
+#include <std_msgs/ColorRGBA.h>
 
 #include <pcl_ros/point_cloud.h>
 #include <pcl_ros/transforms.h>
 
-#include <nav_msgs/OccupancyGrid.h>
-#include <nav_msgs/Path.h>
-#include <geometry_msgs/PoseStamped.h>
-
-#include <heuristic_planners/GetPath.h>
-#include <heuristic_planners/SetAlgorithm.h>
-
+#include "heuristic_planners/GetPath.h"
+#include "heuristic_planners/SetAlgorithm.h"
 
 class HeuristicPlannerROS
 {
@@ -29,7 +31,6 @@ class HeuristicPlannerROS
 public:
     HeuristicPlannerROS()
     {
-        
         std::string algorithm_name;
         lnh_.param("algorithm", algorithm_name, (std::string)"astar");
         lnh_.param("heuristic", heuristic_, (std::string)"euclidean");
@@ -45,12 +46,14 @@ public:
         request_path_server_   = lnh_.advertiseService("request_path",  &HeuristicPlannerROS::requestPathService, this);
         change_planner_server_ = lnh_.advertiseService("set_algorithm", &HeuristicPlannerROS::setAlgorithm, this);
 
-        rviz_trigger_callback_ = lnh_.subscribe("goal", 10, &HeuristicPlannerROS::rvizTriggerCallback, this);
+        rviz_trigger_sub_ = lnh_.subscribe("goal", 10, &HeuristicPlannerROS::rvizTriggerCallback, this);
+        odom_sub_ = lnh_.subscribe("odom", 10, &HeuristicPlannerROS::odomCallback, this);
         
         line_markers_pub_  = lnh_.advertise<visualization_msgs::Marker>("path_line_markers", 1);
         point_markers_pub_ = lnh_.advertise<visualization_msgs::Marker>("path_points_markers", 1);
         global_path_pub_ = lnh_.advertise<nav_msgs::Path>("global_path", 1);
         
+        ROS_INFO("Planner ROS node initialized");
     }
 
 private:
@@ -61,14 +64,16 @@ private:
         rep.result.data = true;
         return true;
     }
+
+    void odomCallback(const nav_msgs::Odometry::ConstPtr &msg) {
+        odom_ = *msg;
+    }
+
     void rvizTriggerCallback(const geometry_msgs::PoseStampedConstPtr &msg) {
+        ROS_INFO("RViz trigger callback");
         algorithm_->reset();
-        double init_x_, init_y_, init_z_;
-        lnh_.param("init_x", init_x_, 0.0);
-        lnh_.param("init_y", init_y_, 0.0);
-        lnh_.param("init_z", init_z_, 0.0);
         
-        Eigen::Vector3d start_pos(init_x_, init_y_, init_z_);
+        Eigen::Vector3d start_pos(odom_.pose.pose.position.x, odom_.pose.pose.position.y, odom_.pose.pose.position.z);
         Eigen::Vector3d goal_pos(msg->pose.position.x, msg->pose.position.y, ground_height_+0.01);
         
         Eigen::Vector3d origin, size;
@@ -389,13 +394,14 @@ private:
     ros::NodeHandle lnh_{"~"};
     ros::ServiceServer request_path_server_, change_planner_server_;
     ros::Publisher line_markers_pub_, point_markers_pub_, global_path_pub_;
-    ros::Subscriber rviz_trigger_callback_;
+    ros::Subscriber rviz_trigger_sub_, odom_sub_;
 
     GridMap::Ptr grid_map_;
 
     std::unique_ptr<Planners::AlgorithmBase> algorithm_;
         
     visualization_msgs::Marker path_line_markers_, path_points_markers_;
+    nav_msgs::Odometry odom_;
     
     //Parameters
     float resolution_;
@@ -414,7 +420,9 @@ int main(int argc, char **argv)
     ros::init(argc, argv, "heuristic_planner_ros_node");
 
     HeuristicPlannerROS heuristic_planner_ros;
-    ros::spin();
 
-return 0;
+    ros::MultiThreadedSpinner spinner(2);
+    spinner.spin();
+
+    return 0;
 }
