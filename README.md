@@ -20,29 +20,18 @@ git clone git@github.com:ChanJoon/3D-Astar-Path-Planners.git
 
 cd ..
 rosdep update && rosdep install --from-paths src/ -y -r
-catkin_make
+catkin_make # catkin build
 ```
 
 3. **Launch a demo a request a path**
 
 - 3D Theta*:
 
-In one terminal:
 ```bash
 roslaunch heuristic_planners planner.launch algorithm_name:=thetastar
 ```
 
-Open another terminal and call an example start and goal request: 
-```bash
-rosservice call /planner_ros_node/request_path "start:
-  x: 0.0
-  y: 0.0
-  z: 0.0
-goal:
-  x: 40.0
-  y: 40.0
-  z: 4.0" 
-```
+and send a goal point using RViz 2D Nav Goal.
 
 
 ### ✨ Key Differences from Original Version
