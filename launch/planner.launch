@@ -35,6 +35,7 @@
     <arg name="output" default="screen"/>
     <node pkg="heuristic_planners" type="planner_ros_node" name="global_planner" output="$(arg output)" required="true" >
         <remap from="~goal" to="/move_base_simple/goal"/>
+        <remap from="~odom" to="/visual_slam/odom"/>
 
         <param name="resolution"            value="$(arg resolution)"/>
         <param name="frame_id"              value="world"/>
