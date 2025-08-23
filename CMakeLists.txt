@@ -28,8 +28,6 @@ find_package(catkin REQUIRED COMPONENTS
 find_package(Eigen3 REQUIRED)
 find_package(PCL REQUIRED)
 
-catkin_python_setup()
-
 # =================== Messages & Services ===================
 add_service_files(
   FILES
@@ -115,17 +113,6 @@ install(TARGETS
   ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
   LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
   RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
-)
-
-catkin_install_python(PROGRAMS
-  scripts/test_algorithms.py
-  scripts/test_algorithms_compare.py
-  scripts/test_algorithms_performance.py
-  scripts/test_algorithms_pseudo_random_paths.py
-  scripts/compare_trajectories_rviz.py
-  scripts/plan_caller.py
-  setup.py
-  DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
 )
 
 install(DIRECTORY include/
