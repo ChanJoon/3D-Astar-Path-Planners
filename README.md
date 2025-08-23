@@ -1,7 +1,8 @@
 # 3D A* Path Planners
 
-
-> ⚠️ This project is currently **UNDER DEVELOPMENT**
+| A* | Theta* | LazyTheta* |
+| --- | --- | --- |
+| <img src="docs/astar.gif" width="250"> | <img src="docs/thetastar.gif" width="250"> | <img src="docs/lazythetastar.gif" width="250"> |
 
 ## Quick-Start
 
