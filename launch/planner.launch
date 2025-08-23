@@ -60,21 +60,10 @@
         <param name="thetastar/lambda_heuristic" value="5.0"/>
         <param name="thetastar/allocate_num" value="1000000"/>
 
-        <!-- 여기서부터 thetastar AGR or FUCK 버전 파라미터 -->
-        <!-- 거의 고정 -->
-        <param name="thetastaragr/resolution" value="0.1"/>
-        <param name="thetastaragr/time_resolution" value="0.8"/>
-        <param name="thetastaragr/allocate_num" value="1000000"/>
-
-        <!-- 약간 고정 -->
-        <param name="thetastaragr/lambda_heuristic" value="5.0"/>
-        <param name="thetastaragr/ground_judge" value="0.1" />
-
-        <!-- 튜닝 파라미터들 -->
-        <param name="thetastaragr/barrier" value="2.0" />
-        <param name="thetastaragr/flying_cost" value="10.0" />
-        <param name="thetastaragr/flying_cost_default" value="0" />
-        <param name="thetastaragr/epsilon" value="0.1" />
+        <param name="lazythetastar/resolution" value="0.1"/>
+        <param name="lazythetastar/time_resolution" value="0.8"/>
+        <param name="lazythetastar/lambda_heuristic" value="5.0"/>
+        <param name="lazythetastar/allocate_num" value="1000000"/>
 
         <!-- ############################################ -->
         <param name="grid_map/resolution" value="0.1" />

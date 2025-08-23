@@ -43,7 +43,7 @@ generate_messages(
 
 catkin_package(
   INCLUDE_DIRS include
-  LIBRARIES AlgorithmBase AStar ThetaStar ThetaStarAGR ThetaStarAGRpp
+  LIBRARIES AlgorithmBase AStar ThetaStar
   CATKIN_DEPENDS std_msgs visualization_msgs geometry_msgs nav_msgs roscpp message_runtime costmap_2d cv_bridge
 )
 
@@ -66,8 +66,7 @@ set(UTILS_SOURCES
 add_library(AlgorithmBase src/Planners/AlgorithmBase.cpp ${UTILS_SOURCES})
 add_library(AStar         src/Planners/AStar.cpp src/Planners/AlgorithmBase.cpp ${UTILS_SOURCES})
 add_library(ThetaStar     src/Planners/ThetaStar.cpp)
-add_library(ThetaStarAGR  src/Planners/ThetaStarAGR.cpp)
-add_library(ThetaStarAGRpp src/Planners/ThetaStarAGRpp.cpp)
+add_library(LazyThetaStar src/Planners/LazyThetaStar.cpp)
 
 add_library(PlanEnv
   src/plan_env/obj_predictor.cpp
@@ -80,8 +79,7 @@ target_link_libraries(PlanEnv ${catkin_LIBRARIES} ${PCL_LIBRARIES})
 target_link_libraries(AlgorithmBase ${catkin_LIBRARIES} ${Boost_LIBRARIES})
 target_link_libraries(AStar        ${catkin_LIBRARIES} ${Boost_LIBRARIES})
 target_link_libraries(ThetaStar    ${catkin_LIBRARIES} ${Boost_LIBRARIES})
-target_link_libraries(ThetaStarAGR ${catkin_LIBRARIES} ${Boost_LIBRARIES})
-target_link_libraries(ThetaStarAGRpp ${catkin_LIBRARIES} ${Boost_LIBRARIES})
+target_link_libraries(LazyThetaStar    ${catkin_LIBRARIES} ${Boost_LIBRARIES})
 
 if(OpenMP_CXX_FOUND)
   message(STATUS "✅ OpenMP Found: ${OpenMP_CXX_FLAGS}")
@@ -90,21 +88,19 @@ if(OpenMP_CXX_FOUND)
   target_link_libraries(AlgorithmBase OpenMP::OpenMP_CXX)
   target_link_libraries(AStar OpenMP::OpenMP_CXX)
   target_link_libraries(ThetaStar OpenMP::OpenMP_CXX)
-  target_link_libraries(ThetaStarAGR OpenMP::OpenMP_CXX)
-  target_link_libraries(ThetaStarAGRpp OpenMP::OpenMP_CXX)
+  target_link_libraries(LazyThetaStar OpenMP::OpenMP_CXX)
 endif()
 
 add_dependencies(AlgorithmBase     ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 add_dependencies(AStar             ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 add_dependencies(ThetaStar         ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
-add_dependencies(ThetaStarAGR      ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
-add_dependencies(ThetaStarAGRpp    ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+add_dependencies(LazyThetaStar   ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 add_dependencies(PlanEnv           ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 
 # =================== Executable ===================
 add_executable(planner_ros_node src/planner_ros_node.cpp)
 target_link_libraries(planner_ros_node
-  AlgorithmBase AStar ThetaStar ThetaStarAGR ThetaStarAGRpp PlanEnv
+  AlgorithmBase AStar ThetaStar LazyThetaStar PlanEnv
   ${catkin_LIBRARIES} Eigen3::Eigen -lstdc++fs -lcrypto -lssl
 )
 if(OpenMP_CXX_FOUND)
@@ -114,7 +110,7 @@ add_dependencies(planner_ros_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_E
 
 # =================== Install ===================
 install(TARGETS
-  AlgorithmBase AStar ThetaStar ThetaStarAGR ThetaStarAGRpp PlanEnv
+  AlgorithmBase AStar ThetaStar LazyThetaStar PlanEnv
   planner_ros_node
   ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
   LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}

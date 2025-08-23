@@ -1,4 +1,5 @@
 #include "Planners/ThetaStar.hpp"
+#include <Eigen/Eigen>
 
 namespace Planners
 {

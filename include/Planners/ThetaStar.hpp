@@ -1,7 +1,9 @@
 #ifndef THETASTAR_HPP
 #define THETASTAR_HPP
 
-#include <Planners/AStar.hpp>
+#include "Planners/AStar.hpp"
+#include <string>
+#include <Eigen/Eigen>
 
 namespace Planners
 {

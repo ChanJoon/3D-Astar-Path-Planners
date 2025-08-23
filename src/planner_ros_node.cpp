@@ -2,8 +2,7 @@
 
 #include "Planners/AStar.hpp"
 #include "Planners/ThetaStar.hpp"
-#include "Planners/ThetaStarAGR.hpp"
-#include "Planners/ThetaStarAGRpp.hpp"
+#include "Planners/LazyThetaStar.hpp"
 #include "utils/misc.hpp"
 #include "utils/geometry_utils.hpp"
 #include "utils/metrics.hpp"
@@ -269,13 +268,9 @@ private:
             ROS_INFO("Using Theta*");
             algorithm_.reset(new Planners::ThetaStar());
             algorithm_->setParam();
-        }else if ( algorithm_name == "thetastaragr" ){
-            ROS_INFO("Using Air-Ground Robot Aware Theta*");
-            algorithm_.reset(new Planners::ThetaStarAGR());
-            algorithm_->setParam();
-        } else if ( algorithm_name == "thetastaragrpp" ) {
-            ROS_INFO("Using MH Theta*");
-            algorithm_.reset(new Planners::ThetaStarAGRpp());
+        }else if ( algorithm_name == "lazythetastar" ){
+            ROS_INFO("Using Lazy Theta*");
+            algorithm_.reset(new Planners::LazyThetaStar());
             algorithm_->setParam();
         } else{
             ROS_WARN("Wrong algorithm name parameter. Using A* by default");
